@@ -1,5 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { PDFDocument } from "pdf-lib";
 import { normCaseNo, normCaseType, normRole, roleSide, CATS } from "@/lib/format";
 
 // Reads a whole court file (often a bundle: statement of claim, memos, documents AND the preliminary judgment
@@ -120,25 +121,89 @@ export function cleanExtract(x: Record<string, unknown>): Extracted {
   };
 }
 
-export async function extractCase(pdfBase64: string): Promise<Extracted> {
+const LOCATE_PROMPT = (from: number, to: number) => `هذا جزء من ملف دعوى (الصفحات ${from} إلى ${to} من الملف الأصلي؛ الصفحة الأولى هنا هي الصفحة ${from}).
+مهمتك فقط تحديد أرقام الصفحات المهمة (بأرقام الملف الأصلي):
+- judgment: صفحات الحكم التمهيدي أو قرار ندب الخبير، كلها من الترويسة حتى المنطوق والتوقيع، ومحاضر الجلسات التي تحدد جلسات لاحقة.
+- header: الصفحات التي فيها رقم القيد أو رقم الدعوى ونوعها (مثل صفحة القيد أو الغلاف) إن لم تكن ضمن الحكم.
+- contacts: الصفحات التي فيها هواتف أو إيميلات الأطراف أو محاميهم (غالباً في صحيفة الدعوى والمذكرات).
+أعد JSON فقط: {"judgment":[أرقام], "header":[أرقام], "contacts":[أرقام]}`;
+
+function client() {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("مفتاح Claude API غير مضبوط في إعدادات Vercel (ANTHROPIC_API_KEY).");
-  const client = new Anthropic({ apiKey: key });
-  const msg = await client.messages.create({
-    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5",
-    max_tokens: 4000,
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdfBase64 } },
-          { type: "text", text: PROMPT },
-        ],
-      },
-    ],
+  return new Anthropic({ apiKey: key });
+}
+const jsonOf = (text: string) => {
+  const j = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
+  if (!j) throw new Error("لم يُرجع Claude بيانات قابلة للقراءة. أعد المحاولة.");
+  return JSON.parse(j);
+};
+async function ask(model: string, pdf: Uint8Array, prompt: string, maxTokens: number) {
+  const msg = await client().messages.create({
+    model,
+    max_tokens: maxTokens,
+    messages: [{ role: "user", content: [
+      { type: "document", source: { type: "base64", media_type: "application/pdf", data: Buffer.from(pdf).toString("base64") } },
+      { type: "text", text: prompt },
+    ] }],
   });
-  const text = msg.content.map((b) => (b.type === "text" ? b.text : "")).join("");
-  const json = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
-  if (!json) throw new Error("لم يُرجع Claude بيانات قابلة للقراءة. أعد المحاولة.");
-  return cleanExtract(JSON.parse(json));
+  return { text: msg.content.map((b) => (b.type === "text" ? b.text : "")).join(""), usage: msg.usage };
+}
+async function subset(src: PDFDocument, pages: number[]) {
+  const out = await PDFDocument.create();
+  const copied = await out.copyPages(src, pages.map((p) => p - 1));
+  copied.forEach((p) => out.addPage(p));
+  return out.save();
+}
+
+const SMALL = 25; // a short file goes straight to the precise model
+const CHUNK = 250; // locator reads big files in chunks of this many pages
+const MAX_SELECTED = 40;
+
+// Two stages for long bundles: a cheap model (Haiku) finds the judgment / header / contact pages anywhere in the
+// file, then the precise model (Sonnet) reads only those pages. Short files are read whole by the precise model.
+export async function extractCase(pdfBase64: string): Promise<Extracted & { pages: number; read: number }> {
+  const precise = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
+  const cheap = process.env.ANTHROPIC_LOCATOR_MODEL || "claude-haiku-5-5";
+  const bytes = Buffer.from(pdfBase64, "base64");
+  let src: PDFDocument | null = null;
+  try {
+    src = await PDFDocument.load(bytes, { ignoreEncryption: true });
+  } catch {
+    src = null; // unusual PDF: fall back to sending it whole
+  }
+  const N = src?.getPageCount() ?? 0;
+
+  if (!src || N <= SMALL) {
+    const r = await ask(precise, bytes, PROMPT, 4000);
+    return { ...cleanExtract(jsonOf(r.text)), pages: N, read: N };
+  }
+
+  // stage 1: locate
+  const found = { judgment: new Set<number>(), header: new Set<number>(), contacts: new Set<number>() };
+  for (let from = 1; from <= N; from += CHUNK) {
+    const to = Math.min(N, from + CHUNK - 1);
+    const part = await subset(src, Array.from({ length: to - from + 1 }, (_, i) => from + i));
+    const r = await ask(cheap, part, LOCATE_PROMPT(from, to), 600);
+    const j = jsonOf(r.text) as Record<string, unknown>;
+    (["judgment", "header", "contacts"] as const).forEach((k) =>
+      (Array.isArray(j[k]) ? (j[k] as unknown[]) : []).map(Number).filter((n) => n >= from && n <= to).forEach((n) => found[k].add(n))
+    );
+  }
+  // judgment pages plus one page either side (the operative part often spills over); then header; then contacts
+  const pick: number[] = [];
+  const add = (n: number) => n >= 1 && n <= N && !pick.includes(n) && pick.length < MAX_SELECTED && pick.push(n);
+  [...found.judgment].sort((a, b) => a - b).forEach((n) => [n - 1, n, n + 1].forEach(add));
+  [...found.header].forEach(add);
+  [...found.contacts].sort((a, b) => a - b).forEach(add);
+  if (!pick.length) [1, 2, 3, N - 2, N - 1, N].forEach(add);
+  const pages = pick.sort((a, b) => a - b);
+
+  // stage 2: extract from the selected pages only
+  const excerpt = await subset(src, pages);
+  const note = `\n\nملاحظة: المرفق مقتطف من ملف عدده ${N} صفحة، يضم الصفحات رقم ${pages.join("، ")} فقط بهذا الترتيب (اختيرت لأنها تحوي الحكم التمهيدي وبيانات القيد والاتصال). استعمل أرقام الملف الأصلي في judgmentPages.`;
+  const r = await ask(precise, excerpt, PROMPT + note, 4000);
+  const ex = cleanExtract(jsonOf(r.text));
+  if (!found.judgment.size) ex.warnings = [ex.warnings, "لم يُعثر على حكم تمهيدي واضح في الملف."].filter(Boolean).join(" ");
+  return { ...ex, pages: N, read: pages.length };
 }

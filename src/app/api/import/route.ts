@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   try {
     const b64 = Buffer.from(await file.arrayBuffer()).toString("base64");
     const ex = await extractCase(b64);
-    await supabase.from("activity").insert({ office_id: officeId, action: "استيراد ملف PDF", detail: { name: path.split("/").pop(), ref: ex.case_no } });
+    await supabase.from("activity").insert({ office_id: officeId, action: "استيراد ملف PDF", detail: { name: `${path.split("/").pop()} · قُرئت ${ex.read} من ${ex.pages} صفحة`, ref: ex.case_no } });
     return NextResponse.json({ ok: true, ex });
   } catch (e) {
     const msg = (e as Error).message || "";

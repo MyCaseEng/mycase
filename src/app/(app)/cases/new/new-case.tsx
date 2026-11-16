@@ -48,6 +48,7 @@ function Review({ ex, path, existing, onReset }: { officeId: string; ex: Extract
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-7">
         <b>استُخرجت البيانات من الملف.</b> راجع الحقول وصحّح ما يلزم، ثم احفظ. لن يُحفظ شيء قبل الضغط على «حفظ الدعوى».
         {ex.judgmentPages && <div>الحكم التمهيدي في الصفحات: <b>{ex.judgmentPages}</b></div>}
+        {"pages" in ex && (ex as { pages: number }).pages > 25 && <div className="text-muted">الملف {(ex as { pages: number }).pages} صفحة؛ بُحث فيه كله ثم قُرئت بدقة {(ex as unknown as { read: number }).read} صفحة مهمة.</div>}
         {ex.summary && <div className="text-muted">ملخص: {ex.summary}</div>}
         {ex.warnings && <div className="text-amber-800">⚠ {ex.warnings}</div>}
         {!ex.case_no && <div className="text-amber-800">⚠ لم يُعثر على رقم الدعوى في الملف. أدخله يدوياً إن كان لديك.</div>}
