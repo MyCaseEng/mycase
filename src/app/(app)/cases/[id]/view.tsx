@@ -5,6 +5,8 @@ import type { Case, Ev, Member, Note, Party, QLetter } from "@/lib/cases";
 import type { Ref } from "@/lib/refs";
 import QuestionsPanel from "./questions";
 import ArchivePanel from "./archive";
+import type { Alert } from "@/lib/alerts";
+import { AlertLine } from "@/components/alerts-ui";
 import { fmtD, inDays, dayDiff, money, normCaseNo, normRole, srcOf, srcLabel, todayStr, ROLES1, ROLES2, ROLES3 } from "@/lib/format";
 import { Field, Modal, Msg, inputCls } from "@/components/ui";
 import Confirm2 from "@/components/confirm2";
@@ -14,18 +16,25 @@ import {
 } from "../actions";
 
 export type CaseSettings = { refPrefix: string; qTemplates: Record<string, string[]>; defaultReplyDays: number };
-type P = { c: Case; members: Member[]; notes: Note[]; letters: QLetter[]; refs: Ref[]; settings: CaseSettings; canWrite: boolean };
+type P = { c: Case; members: Member[]; notes: Note[]; letters: QLetter[]; alerts: Alert[]; refs: Ref[]; settings: CaseSettings; canWrite: boolean };
 
 const panel = "rounded-2xl border border-line bg-white p-5";
 const btn = "rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-background";
 
-export default function CaseView({ c, members, notes, letters, refs, settings, canWrite }: P) {
+export default function CaseView({ c, members, notes, letters, alerts, refs, settings, canWrite }: P) {
   const delivered = !!c.report_date;
   return (
     <div className="mx-auto max-w-5xl space-y-5">
       <Link href="/cases" className="text-sm text-muted hover:text-brand">
         → الدعاوى
       </Link>
+      {alerts.length > 0 && (
+        <section className="space-y-1.5">
+          {alerts.map((a) => (
+            <AlertLine key={a.key} a={a} href={`/cases/${c.id}`} canWrite={canWrite} />
+          ))}
+        </section>
+      )}
       <DataPanel c={c} canWrite={canWrite} />
       <Placeholder title="مستندات ونماذج الخبير" step={6} />
       <QuestionsPanel c={c} letters={letters} refs={refs} settings={settings} canWrite={canWrite} />
@@ -79,7 +88,7 @@ function DataPanel({ c, canWrite }: { c: Case; canWrite: boolean }) {
     ));
 
   return (
-    <section className={panel}>
+    <section id="data" className={`${panel} scroll-mt-4`}>
       <div className="text-center">
         <h1 className="text-2xl font-bold">بيانات الدعوى والأطراف</h1>
         <div className="mt-1 text-lg">
@@ -331,7 +340,7 @@ function EventsPanel({ c, canWrite }: { c: Case; canWrite: boolean }) {
   const evs = c.events.filter((e) => e.type !== "جلسة").sort((a, b) => (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")));
   const who = (v: string) => (v === "1" ? "الطرف الأول" : v === "2" ? "الطرف الثاني" : "كل الأطراف");
   return (
-    <section className={panel}>
+    <section id="events" className={`${panel} scroll-mt-4`}>
       <div className="mb-3 flex items-center gap-3">
         <h2 className="flex-1 font-semibold">المواعيد</h2>
         {canWrite && (

@@ -134,3 +134,20 @@ export async function listRefs(officeId: string, caseId?: string) {
   return (data ?? []) as import("@/lib/refs").Ref[];
 }
 export const qOpen = (l: QLetter) => !l.reply_date || l.reply_type === "partial";
+
+// Everything the home board, the bell and the alerts need, in three queries.
+export async function loadBoard(officeId: string) {
+  const supabase = await createClient();
+  const [cases, letters, snoozes] = await Promise.all([
+    listCases(officeId),
+    supabase.from("question_letters").select("*").eq("office_id", officeId).then((r) => (r.data ?? []) as (QLetter & { case_id: string })[]),
+    supabase.from("alert_snoozes").select("case_id, alert_key, until").eq("office_id", officeId).then((r) => (r.data ?? []) as { case_id: string; alert_key: string; until: string }[]),
+  ]);
+  const lettersOf = (id: string) => letters.filter((l) => l.case_id === id);
+  return { cases, lettersOf, snoozes };
+}
+
+export const caseLabel = (c: Pick<Case, "case_no" | "case_type" | "parties">) =>
+  c.case_no
+    ? `${c.case_no.trim()} ${c.case_type ?? ""}`.trim()
+    : c.parties.filter((p) => p.side !== 3).map((p) => p.name).slice(0, 2).join(" ضد ") || "دعوى بدون رقم";

@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { getCtx } from "@/lib/office";
 import { getCase, listMembers, listNotes, listLetters, listRefs } from "@/lib/cases";
 import { getSettings } from "@/lib/settings";
+import { caseAlerts, LEVEL_ORDER } from "@/lib/alerts";
+import { createClient } from "@/lib/supabase/server";
 import CaseView from "./view";
 
 export default async function CasePage({ params }: PageProps<"/cases/[id]">) {
@@ -17,12 +19,16 @@ export default async function CasePage({ params }: PageProps<"/cases/[id]">) {
     getSettings(ctx.officeId),
   ]);
   if (!c) notFound();
+  const supabase = await createClient();
+  const { data: snoozes } = await supabase.from("alert_snoozes").select("case_id, alert_key, until").eq("case_id", id);
+  const alerts = caseAlerts(c, letters, snoozes ?? []).sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level]);
   return (
     <CaseView
       c={c}
       members={members}
       notes={notes}
       letters={letters}
+      alerts={alerts}
       refs={refs}
       settings={{ refPrefix: settings.refPrefix, qTemplates: settings.qTemplates, defaultReplyDays: settings.defaultReplyDays }}
       canWrite={ctx.role !== "viewer"}

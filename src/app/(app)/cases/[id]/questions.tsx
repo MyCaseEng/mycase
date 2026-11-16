@@ -19,7 +19,7 @@ export default function QuestionsPanel({ c, letters, refs, settings, canWrite }:
   const refOf = (id: string | null) => refs.find((r) => r.id === id);
 
   return (
-    <section className={panel}>
+    <section id="questions" className={`${panel} scroll-mt-4`}>
       <div className="mb-3 flex items-center gap-3">
         <h2 className="flex-1 font-semibold">أسئلة واستفسارات الخبير وردود الأطراف</h2>
         {canWrite && (

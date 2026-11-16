@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import Shell from "./shell";
 import { getCtx, ROLE_LABEL } from "@/lib/office";
 import { createClient } from "@/lib/supabase/server";
+import { loadBoard, caseLabel } from "@/lib/cases";
+import { caseAlerts, LEVEL_ORDER } from "@/lib/alerts";
+import { normCaseNo } from "@/lib/format";
+import { Bell, type CaseAlerts } from "@/components/alerts-ui";
 
 async function signOut() {
   "use server";
@@ -23,8 +27,17 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 
 async function SignedIn({ children }: { children: React.ReactNode }) {
   const ctx = await getCtx();
+  const { cases, lettersOf, snoozes } = await loadBoard(ctx.officeId);
+  const groups: CaseAlerts[] = cases
+    .map((c) => ({
+      caseId: c.id,
+      label: caseLabel({ ...c, case_no: c.case_no ? normCaseNo(c.case_no) : null }),
+      alerts: caseAlerts(c, lettersOf(c.id), snoozes).sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level]),
+    }))
+    .filter((g) => g.alerts.length)
+    .sort((a, b) => LEVEL_ORDER[a.alerts[0].level] - LEVEL_ORDER[b.alerts[0].level]);
   return (
-    <Shell officeName={ctx.officeName} user={{ name: ctx.displayName, role: ROLE_LABEL[ctx.role] }} signOut={signOut}>
+    <Shell officeName={ctx.officeName} user={{ name: ctx.displayName, role: ROLE_LABEL[ctx.role] }} signOut={signOut} bell={<Bell groups={groups} />}>
       {children}
     </Shell>
   );

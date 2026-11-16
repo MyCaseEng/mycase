@@ -9,8 +9,10 @@ export default function Shell({
   officeName,
   user,
   signOut,
+  bell,
   children,
 }: {
+  bell: React.ReactNode;
   officeName: string;
   user: { name: string; role: string };
   signOut: () => Promise<void>;
@@ -21,10 +23,11 @@ export default function Shell({
     <div className="flex h-full flex-col gap-5 p-4">
       <div className="flex items-center gap-3">
         <Image src="/icons/icon-192.png" alt="" width={36} height={36} className="rounded-lg" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="font-bold text-brand">{BRAND.name}</div>
           <div className="truncate text-xs text-muted">{officeName}</div>
         </div>
+        <span className="hidden md:block">{bell}</span>
       </div>
       <Nav onNavigate={() => setOpen(false)} />
       <div className="mt-auto border-t border-line pt-3 text-sm">
@@ -52,7 +55,8 @@ export default function Shell({
           <button onClick={() => setOpen(true)} aria-label="القائمة" className="rounded-lg border border-line px-2.5 py-1 text-lg">
             ☰
           </button>
-          <span className="font-bold text-brand">{BRAND.name}</span>
+          <span className="flex-1 font-bold text-brand">{BRAND.name}</span>
+          {bell}
         </header>
         <main className="flex-1 p-4 md:p-8">{children}</main>
       </div>
