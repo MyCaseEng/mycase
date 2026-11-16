@@ -17,22 +17,31 @@ export type Ctx = {
 // One office per user for now; an office switcher comes when someone belongs to two.
 export const getCtx = cache(async (): Promise<Ctx> => {
   const supabase = await createClient();
-  const { data: u } = await supabase.auth.getUser();
-  if (!u.user) redirect("/login");
-  await supabase.rpc("accept_invitations");
-  const { data: m } = await supabase
-    .from("members")
-    .select("office_id, role, display_name, offices(name)")
-    .eq("user_id", u.user.id)
-    .eq("is_active", true)
-    .order("created_at")
-    .limit(1)
-    .maybeSingle();
+  // getClaims verifies the session token locally (no round trip to the auth server on every page)
+  const { data: cl } = await supabase.auth.getClaims();
+  const claims = cl?.claims as { sub?: string; email?: string } | undefined;
+  if (!claims?.sub) redirect("/login");
+  const userId = claims.sub;
+  const findMember = () =>
+    supabase
+      .from("members")
+      .select("office_id, role, display_name, offices(name)")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .order("created_at")
+      .limit(1)
+      .maybeSingle();
+  let { data: m } = await findMember();
+  if (!m) {
+    // only when the user has no office yet: join any office that invited this email
+    await supabase.rpc("accept_invitations");
+    ({ data: m } = await findMember());
+  }
   if (!m) redirect("/welcome");
   const office = m.offices as unknown as { name: string } | null;
   return {
-    userId: u.user.id,
-    email: u.user.email ?? "",
+    userId,
+    email: claims.email ?? "",
     officeId: m.office_id,
     officeName: office?.name ?? "",
     role: m.role as Role,
