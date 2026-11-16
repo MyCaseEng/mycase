@@ -5,6 +5,8 @@ import type { Case, Ev, Member, Note, Party, QLetter } from "@/lib/cases";
 import type { Ref } from "@/lib/refs";
 import QuestionsPanel from "./questions";
 import ArchivePanel from "./archive";
+import DocsPanel from "./docs";
+import type { OfficeInfo, ProcRow } from "@/lib/docs";
 import type { Alert } from "@/lib/alerts";
 import { AlertLine } from "@/components/alerts-ui";
 import { fmtD, inDays, dayDiff, money, normCaseNo, normRole, srcOf, srcLabel, todayStr, ROLES1, ROLES2, ROLES3 } from "@/lib/format";
@@ -16,12 +18,13 @@ import {
 } from "../actions";
 
 export type CaseSettings = { refPrefix: string; qTemplates: Record<string, string[]>; defaultReplyDays: number };
-type P = { c: Case; members: Member[]; notes: Note[]; letters: QLetter[]; alerts: Alert[]; refs: Ref[]; settings: CaseSettings; canWrite: boolean };
+type P = { c: Case; members: Member[]; notes: Note[]; letters: QLetter[]; alerts: Alert[]; office: OfficeInfo; procRows: ProcRow[]; refs: Ref[]; settings: CaseSettings; canWrite: boolean };
 
 const panel = "rounded-2xl border border-line bg-white p-5";
 const btn = "rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-background";
 
-export default function CaseView({ c, members, notes, letters, alerts, refs, settings, canWrite }: P) {
+export default function CaseView({ c, members, notes, letters, alerts, refs, settings, office, procRows, canWrite }: P) {
+  const [qSetup, setQSetup] = useState(false);
   const delivered = !!c.report_date;
   return (
     <div className="mx-auto max-w-5xl space-y-5">
@@ -36,8 +39,8 @@ export default function CaseView({ c, members, notes, letters, alerts, refs, set
         </section>
       )}
       <DataPanel c={c} canWrite={canWrite} />
-      <Placeholder title="مستندات ونماذج الخبير" step={6} />
-      <QuestionsPanel c={c} letters={letters} refs={refs} settings={settings} canWrite={canWrite} />
+      <DocsPanel c={c} letters={letters} refs={refs} prefix={settings.refPrefix} office={office} procRows={procRows} canWrite={canWrite} onQuestions={() => { setQSetup(true); document.getElementById("questions")?.scrollIntoView({ behavior: "smooth" }); }} />
+      <QuestionsPanel c={c} letters={letters} refs={refs} settings={settings} office={office} canWrite={canWrite} openSetup={qSetup} onSetupClose={() => setQSetup(false)} />
       <EventsPanel c={c} canWrite={canWrite} />
       <ArchivePanel c={c} refs={refs} members={members} prefix={settings.refPrefix} canWrite={canWrite} />
       <TeamPanel c={c} members={members} canWrite={canWrite} />
@@ -57,15 +60,6 @@ export default function CaseView({ c, members, notes, letters, alerts, refs, set
       )}
       <NotesPanel c={c} notes={notes} members={members} canWrite={canWrite} />
     </div>
-  );
-}
-
-function Placeholder({ title, step }: { title: string; step: number }) {
-  return (
-    <section className={`${panel} border-dashed`}>
-      <h2 className="font-semibold">{title}</h2>
-      <p className="mt-1 text-sm text-muted">يُبنى في الخطوة {step}.</p>
-    </section>
   );
 }
 

@@ -23,6 +23,7 @@ export type Ev = {
   place: string | null;
   invited: string;
   note: string | null;
+  created_at?: string;
 };
 export type Note = { id: string; body: string; author: string | null; created_at: string };
 export type Case = {
@@ -47,6 +48,7 @@ export type Case = {
   status: string;
   report_date: string | null;
   created_at: string;
+  proc_num?: "party" | "time";
   parties: Party[];
   events: Ev[];
   case_team: { user_id: string; duty: "executor" | "coordinator" }[];
@@ -54,7 +56,7 @@ export type Case = {
 export type Member = { user_id: string; display_name: string; short_name: string | null; role: string; is_active: boolean };
 
 const CASE_SELECT =
-  "id, case_no, case_type, category, authority, assign_src, circuit, judge, secretary, mission, received, prelim_date, deadline, due_note, deposit_ordered, claim_value, project_value, supplementary, status, report_date, created_at, parties(*), events(*), case_team(user_id, duty)";
+  "id, case_no, case_type, category, authority, assign_src, circuit, judge, secretary, mission, received, prelim_date, deadline, due_note, deposit_ordered, claim_value, project_value, supplementary, status, report_date, created_at, proc_num, parties(*), events(*), case_team(user_id, duty)";
 
 export async function listCases(officeId: string) {
   const supabase = await createClient();
@@ -120,6 +122,7 @@ export type QLetter = {
   reply_type: "partial" | "full" | null;
   reply_date: string | null;
   reply_note: string | null;
+  send_to?: "party" | "lawyer";
 };
 export async function listLetters(caseId: string) {
   const supabase = await createClient();
@@ -151,3 +154,14 @@ export const caseLabel = (c: Pick<Case, "case_no" | "case_type" | "parties">) =>
   c.case_no
     ? `${c.case_no.trim()} ${c.case_type ?? ""}`.trim()
     : c.parties.filter((p) => p.side !== 3).map((p) => p.name).slice(0, 2).join(" ضد ") || "دعوى بدون رقم";
+
+export async function listProcRows(caseId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase.from("procedures").select("id, auto_key, date, body, hidden, att").eq("case_id", caseId);
+  return (data ?? []) as import("@/lib/docs").ProcRow[];
+}
+export async function getOfficeInfo(officeId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase.from("offices").select("expert_name, address").eq("id", officeId).single();
+  return { expertName: data?.expert_name ?? "", address: data?.address ?? "" };
+}

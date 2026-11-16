@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getCtx } from "@/lib/office";
 import { getSettings } from "@/lib/settings";
 import { QTPL_DEFAULT } from "@/lib/refs";
+import { TEMPLATE_KINDS } from "@/lib/docs";
+import { SRCS } from "@/lib/format";
+import TemplateRow from "./template-row";
 
 async function saveOffice(form: FormData) {
   "use server";
@@ -10,7 +13,11 @@ async function saveOffice(form: FormData) {
   const supabase = await createClient();
   await supabase
     .from("offices")
-    .update({ name: String(form.get("name") || "").trim(), expert_name: String(form.get("expert") || "").trim() || null })
+    .update({
+      name: String(form.get("name") || "").trim(),
+      expert_name: String(form.get("expert") || "").trim() || null,
+      address: String(form.get("address") || "").trim() || null,
+    })
     .eq("id", ctx.officeId);
   revalidatePath("/", "layout");
 }
@@ -41,7 +48,8 @@ async function saveWork(form: FormData) {
 export default async function SettingsPage() {
   const ctx = await getCtx();
   const supabase = await createClient();
-  const { data: office } = await supabase.from("offices").select("name, expert_name").eq("id", ctx.officeId).single();
+  const { data: office } = await supabase.from("offices").select("name, expert_name, address").eq("id", ctx.officeId).single();
+  const { data: wordTpls } = await supabase.from("templates").select("kind, assign_src, file_name, updated_at").eq("office_id", ctx.officeId);
   const isAdmin = ctx.role === "admin";
   const st = await getSettings(ctx.officeId);
   const tpls = Object.entries(Object.keys(st.qTemplates).length ? st.qTemplates : QTPL_DEFAULT);
@@ -57,6 +65,10 @@ export default async function SettingsPage() {
         <label className="block">
           <span className="text-sm text-muted">اسم الخبير (للتوقيع في الخطابات والتقارير)</span>
           <input name="expert" defaultValue={office?.expert_name ?? ""} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 disabled:bg-background" />
+        </label>
+        <label className="block">
+          <span className="text-sm text-muted">عنوان المكتب (يُطبع في محضر المعاينة إذا كانت في مقر المكتب)</span>
+          <input name="address" defaultValue={office?.address ?? ""} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 disabled:bg-background" />
         </label>
         {isAdmin ? (
           <button className="rounded-lg bg-brand px-5 py-2 font-semibold text-white">حفظ</button>
@@ -87,9 +99,24 @@ export default async function SettingsPage() {
         </div>
         {isAdmin && <button className="rounded-lg bg-brand px-5 py-2 font-semibold text-white">حفظ</button>}
       </form>
-      <div className="rounded-xl border border-dashed border-line bg-white p-5 text-sm text-muted">
-        قوالب Word والترويسات حسب جهة التكليف تُضاف في الخطوة 6.
-      </div>
+      <section className="space-y-3 rounded-xl border border-line bg-white p-5">
+        <h2 className="font-semibold">قوالب Word</h2>
+        <p className="text-sm text-muted">
+          ارفع قالب المكتب لكل نوع. القالب «العام» يُستعمل لكل الدعاوى، ويمكن رفع قالب بترويسة مختلفة لجهة تكليف معيّنة (مثل جمعية المهندسين) فيُستعمل لدعاويها بدل العام.
+        </p>
+        <div className="divide-y divide-line rounded-lg border border-line">
+          {TEMPLATE_KINDS.map(([k, label]) => (
+            <TemplateRow
+              key={k}
+              kind={k}
+              label={label}
+              items={(wordTpls ?? []).filter((x) => x.kind === k).map((x) => ({ src: x.assign_src, fileName: x.file_name, updatedAt: x.updated_at }))}
+              srcs={SRCS.map(([v, l]) => [v, l])}
+              isAdmin={isAdmin}
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
