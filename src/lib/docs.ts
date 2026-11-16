@@ -38,8 +38,9 @@ export const invitedOf = (c: Case, e: Ev) =>
 
 // Addressing: «السادة / ... المحترمين» for companies, law offices and authorities.
 type Addr = { title: string; name: string; honor: string; agent: string };
+// The name wins over the saved type: a party called "... للتجارة والمقاولات" is a company even if saved as a person.
 function kindOf(p: { name: string; kind?: string | null }) {
-  if (p.kind === "شركة" || p.kind === "جهة حكومية" || isOrg(p.name)) return "شركة";
+  if (isOrg(p.name) || p.kind === "شركة" || p.kind === "جهة حكومية") return "شركة";
   return p.kind === "امرأة" ? "امرأة" : "رجل";
 }
 const T: Record<string, [string, string, string]> = { شركة: ["السادة", "المحترمين", "وكلاء"], امرأة: ["السيدة", "المحترمة", "وكيلة"], رجل: ["السيد", "المحترم", "وكيل"] };
