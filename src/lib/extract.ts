@@ -138,16 +138,27 @@ const jsonOf = (text: string) => {
   if (!j) throw new Error("لم يُرجع Claude بيانات قابلة للقراءة. أعد المحاولة.");
   return JSON.parse(j);
 };
-async function ask(model: string, pdf: Uint8Array, prompt: string, maxTokens: number) {
+// Sonnet 5.5 always thinks (adaptive) and the thinking shares max_tokens with the answer, so the budget must be
+// generous; "low" effort keeps a data-extraction task fast and cheap. Haiku 5.5 can run with thinking disabled.
+async function ask(model: string, pdf: Uint8Array, prompt: string, opts: { maxTokens: number; noThinking?: boolean }) {
   const msg = await client().messages.create({
     model,
-    max_tokens: maxTokens,
+    max_tokens: opts.maxTokens,
+    ...(opts.noThinking ? { thinking: { type: "disabled" as const } } : { output_config: { effort: "low" as const } }),
     messages: [{ role: "user", content: [
       { type: "document", source: { type: "base64", media_type: "application/pdf", data: Buffer.from(pdf).toString("base64") } },
       { type: "text", text: prompt },
     ] }],
   });
-  return { text: msg.content.map((b) => (b.type === "text" ? b.text : "")).join(""), usage: msg.usage };
+  const text = msg.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+  if (!text.includes("{")) {
+    const why =
+      msg.stop_reason === "max_tokens" ? "انتهت مساحة الرد قبل اكتمال الإجابة"
+      : msg.stop_reason === "refusal" ? "رفض النموذج قراءة الملف"
+      : `سبب التوقف: ${msg.stop_reason}`;
+    throw new Error(`لم يُرجع Claude بيانات قابلة للقراءة (${why}). أعد المحاولة، وإن تكرر أرسل هذه الرسالة.`);
+  }
+  return { text, usage: msg.usage };
 }
 async function subset(src: PDFDocument, pages: number[]) {
   const out = await PDFDocument.create();
@@ -175,7 +186,7 @@ export async function extractCase(pdfBase64: string): Promise<Extracted & { page
   const N = src?.getPageCount() ?? 0;
 
   if (!src || N <= SMALL) {
-    const r = await ask(precise, bytes, PROMPT, 4000);
+    const r = await ask(precise, bytes, PROMPT, { maxTokens: 16000 });
     return { ...cleanExtract(jsonOf(r.text)), pages: N, read: N };
   }
 
@@ -184,8 +195,14 @@ export async function extractCase(pdfBase64: string): Promise<Extracted & { page
   for (let from = 1; from <= N; from += CHUNK) {
     const to = Math.min(N, from + CHUNK - 1);
     const part = await subset(src, Array.from({ length: to - from + 1 }, (_, i) => from + i));
-    const r = await ask(cheap, part, LOCATE_PROMPT(from, to), 600);
-    const j = jsonOf(r.text) as Record<string, unknown>;
+    let j: Record<string, unknown> = {};
+    try {
+      const r = await ask(cheap, part, LOCATE_PROMPT(from, to), { maxTokens: 2000, noThinking: true });
+      j = jsonOf(r.text) as Record<string, unknown>;
+    } catch {
+      // a failed chunk is not fatal: its first and last pages are still read below
+      [from, from + 1, to - 1, to].forEach((n) => found.header.add(n));
+    }
     (["judgment", "header", "contacts"] as const).forEach((k) =>
       (Array.isArray(j[k]) ? (j[k] as unknown[]) : []).map(Number).filter((n) => n >= from && n <= to).forEach((n) => found[k].add(n))
     );
@@ -202,7 +219,7 @@ export async function extractCase(pdfBase64: string): Promise<Extracted & { page
   // stage 2: extract from the selected pages only
   const excerpt = await subset(src, pages);
   const note = `\n\nملاحظة: المرفق مقتطف من ملف عدده ${N} صفحة، يضم الصفحات رقم ${pages.join("، ")} فقط بهذا الترتيب (اختيرت لأنها تحوي الحكم التمهيدي وبيانات القيد والاتصال). استعمل أرقام الملف الأصلي في judgmentPages.`;
-  const r = await ask(precise, excerpt, PROMPT + note, 4000);
+  const r = await ask(precise, excerpt, PROMPT + note, { maxTokens: 16000 });
   const ex = cleanExtract(jsonOf(r.text));
   if (!found.judgment.size) ex.warnings = [ex.warnings, "لم يُعثر على حكم تمهيدي واضح في الملف."].filter(Boolean).join(" ");
   return { ...ex, pages: N, read: pages.length };
