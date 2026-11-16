@@ -106,3 +106,31 @@ export const sideOf = (c: Pick<Case, "parties">, s: 1 | 2 | 3) =>
   c.parties.filter((p) => p.side === s).sort((a, b) => a.sort - b.sort);
 export const appointmentsOf = (c: Pick<Case, "events">) =>
   c.events.filter((e) => e.type !== "جلسة").sort((a, b) => (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")));
+
+export type QLetter = {
+  id: string;
+  party_id: string | null;
+  addressee: string | null;
+  letter_date: string;
+  days: number;
+  due: string | null;
+  questions: string[];
+  ref_id: string | null;
+  sent_at: string | null;
+  reply_type: "partial" | "full" | null;
+  reply_date: string | null;
+  reply_note: string | null;
+};
+export async function listLetters(caseId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase.from("question_letters").select("*").eq("case_id", caseId).order("created_at");
+  return (data ?? []) as QLetter[];
+}
+export async function listRefs(officeId: string, caseId?: string) {
+  const supabase = await createClient();
+  let q = supabase.from("ref_numbers").select("*").eq("office_id", officeId);
+  if (caseId) q = q.eq("case_id", caseId);
+  const { data } = await q.order("year", { ascending: false }).order("seq", { ascending: false });
+  return (data ?? []) as import("@/lib/refs").Ref[];
+}
+export const qOpen = (l: QLetter) => !l.reply_date || l.reply_type === "partial";

@@ -1,7 +1,10 @@
 "use client";
 import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
-import type { Case, Ev, Member, Note, Party } from "@/lib/cases";
+import type { Case, Ev, Member, Note, Party, QLetter } from "@/lib/cases";
+import type { Ref } from "@/lib/refs";
+import QuestionsPanel from "./questions";
+import ArchivePanel from "./archive";
 import { fmtD, inDays, dayDiff, money, normCaseNo, normRole, srcOf, srcLabel, todayStr, ROLES1, ROLES2, ROLES3 } from "@/lib/format";
 import { Field, Modal, Msg, inputCls } from "@/components/ui";
 import Confirm2 from "@/components/confirm2";
@@ -10,12 +13,13 @@ import {
   updateCase, saveParty, deleteParty, saveEvent, deleteEvent, setTeam, addNote, deleteNote, setDelivered, trashCase, type Res,
 } from "../actions";
 
-type P = { c: Case; members: Member[]; notes: Note[]; canWrite: boolean };
+export type CaseSettings = { refPrefix: string; qTemplates: Record<string, string[]>; defaultReplyDays: number };
+type P = { c: Case; members: Member[]; notes: Note[]; letters: QLetter[]; refs: Ref[]; settings: CaseSettings; canWrite: boolean };
 
 const panel = "rounded-2xl border border-line bg-white p-5";
 const btn = "rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-background";
 
-export default function CaseView({ c, members, notes, canWrite }: P) {
+export default function CaseView({ c, members, notes, letters, refs, settings, canWrite }: P) {
   const delivered = !!c.report_date;
   return (
     <div className="mx-auto max-w-5xl space-y-5">
@@ -24,9 +28,9 @@ export default function CaseView({ c, members, notes, canWrite }: P) {
       </Link>
       <DataPanel c={c} canWrite={canWrite} />
       <Placeholder title="مستندات ونماذج الخبير" step={6} />
-      <Placeholder title="أسئلة واستفسارات الخبير وردود الأطراف" step={5} />
+      <QuestionsPanel c={c} letters={letters} refs={refs} settings={settings} canWrite={canWrite} />
       <EventsPanel c={c} canWrite={canWrite} />
-      <Placeholder title="أرشيف الدعوى" step={5} />
+      <ArchivePanel c={c} refs={refs} members={members} prefix={settings.refPrefix} canWrite={canWrite} />
       <TeamPanel c={c} members={members} canWrite={canWrite} />
       {canWrite && (
         <section className={panel}>
