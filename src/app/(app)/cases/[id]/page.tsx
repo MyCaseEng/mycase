@@ -26,6 +26,7 @@ export default async function CasePage({ params }: PageProps<"/cases/[id]">) {
   const alerts = caseAlerts(c, letters, snoozes ?? []).sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level]);
   return (
     <CaseView
+      officeId={ctx.officeId}
       c={c}
       members={members}
       notes={notes}

@@ -208,3 +208,82 @@ export async function trashCase(caseId: string) {
   revalidatePath("/cases");
   redirect("/cases");
 }
+
+/* ---------------- import from PDF ---------------- */
+type ImpParty = { role: string; name: string; kind?: string; phone?: string; email?: string; lawyer?: string; lawyer_phone?: string; lawyer_email?: string };
+type ImpSession = { date: string; note: string };
+
+// New case from a reviewed import: case fields come from the form, parties and hearings as JSON.
+export async function createImportedCase(_: Res, f: FormData): Promise<Res> {
+  const ctx = await getCtx();
+  const supabase = await createClient();
+  const fields = caseFields(f);
+  if (!fields.received) fields.received = todayStr();
+  const parties = JSON.parse(String(f.get("parties_json") || "[]")) as ImpParty[];
+  const sessions = JSON.parse(String(f.get("sessions_json") || "[]")) as ImpSession[];
+  const sourceFile = s(f, "source_file");
+  if (!fields.case_no && !parties.length) return { ok: false, text: "أدخل رقم الدعوى أو طرفاً واحداً على الأقل." };
+  const { data, error } = await supabase
+    .from("cases")
+    .insert({ ...fields, office_id: ctx.officeId, created_by: ctx.userId, source_file: sourceFile })
+    .select("id")
+    .single();
+  if (error) return err(error);
+  if (parties.length)
+    await supabase.from("parties").insert(
+      parties.filter((p) => p.name?.trim()).map((p, i) => ({
+        case_id: data.id, office_id: ctx.officeId, sort: i, role: normRole(p.role || "طرف آخر"), side: roleSide(p.role || ""),
+        name: p.name.trim(), kind: p.kind || null, phone: p.phone || null, email: p.email || null,
+        lawyer: p.lawyer || null, lawyer_phone: p.lawyer_phone || null, lawyer_email: p.lawyer_email || null,
+      }))
+    );
+  if (sessions.length)
+    await supabase.from("events").insert(sessions.filter((x) => x.date).map((x) => ({ case_id: data.id, office_id: ctx.officeId, type: "جلسة", date: x.date, note: x.note || null })));
+  await supabase.from("case_team").insert({ case_id: data.id, office_id: ctx.officeId, user_id: ctx.userId, duty: "executor" });
+  await log("إنشاء دعوى من PDF", data.id, caseRef(fields) || parties.map((p) => p.name).slice(0, 2).join(" ضد "));
+  revalidatePath("/cases");
+  redirect(`/cases/${data.id}`);
+}
+
+// Update an existing case from a new PDF (e.g. the preliminary judgment arrives after the statement of claim):
+// only empty fields are filled, new parties and hearings are added, nothing is overwritten.
+export async function applyImportToCase(
+  caseId: string,
+  patch: Record<string, string | number | boolean | null>,
+  parties: ImpParty[],
+  sessions: ImpSession[],
+  sourceFile: string | null
+): Promise<Res> {
+  const ctx = await getCtx();
+  const supabase = await createClient();
+  const allowed = ["case_no", "case_type", "authority", "circuit", "judge", "secretary", "mission", "received", "prelim_date", "deadline", "due_note", "deposit_ordered", "claim_value", "project_value"];
+  const clean = Object.fromEntries(Object.entries(patch).filter(([k]) => allowed.includes(k)));
+  if (sourceFile) clean.source_file = sourceFile;
+  if (Object.keys(clean).length) {
+    const { error } = await supabase.from("cases").update(clean).eq("id", caseId).eq("office_id", ctx.officeId);
+    if (error) return err(error);
+  }
+  if (parties.length)
+    await supabase.from("parties").insert(
+      parties.map((p, i) => ({
+        case_id: caseId, office_id: ctx.officeId, sort: 100 + i, role: normRole(p.role || "طرف آخر"), side: roleSide(p.role || ""),
+        name: p.name, kind: p.kind || null, phone: p.phone || null, email: p.email || null,
+        lawyer: p.lawyer || null, lawyer_phone: p.lawyer_phone || null, lawyer_email: p.lawyer_email || null,
+      }))
+    );
+  if (sessions.length)
+    await supabase.from("events").insert(sessions.map((x) => ({ case_id: caseId, office_id: ctx.officeId, type: "جلسة", date: x.date, note: x.note || null })));
+  await log("تحديث الدعوى من PDF", caseId, null, { name: `${Object.keys(clean).length} حقل · ${parties.length} طرف · ${sessions.length} جلسة` });
+  revalidatePath(`/cases/${caseId}`);
+  revalidatePath("/cases");
+  return { ok: true, text: "حُدّثت الدعوى." };
+}
+
+export async function sourceFileUrl(caseId: string): Promise<string | null> {
+  const ctx = await getCtx();
+  const supabase = await createClient();
+  const { data: c } = await supabase.from("cases").select("source_file").eq("id", caseId).eq("office_id", ctx.officeId).single();
+  if (!c?.source_file) return null;
+  const { data } = await supabase.storage.from("case-files").createSignedUrl(c.source_file, 300);
+  return data?.signedUrl ?? null;
+}

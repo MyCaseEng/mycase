@@ -6,6 +6,7 @@ import type { Ref } from "@/lib/refs";
 import QuestionsPanel from "./questions";
 import ArchivePanel from "./archive";
 import DocsPanel from "./docs";
+import { UpdateFromPdf, SourceFileLink } from "./update-pdf";
 import type { OfficeInfo, ProcRow } from "@/lib/docs";
 import type { Alert } from "@/lib/alerts";
 import { AlertLine } from "@/components/alerts-ui";
@@ -18,12 +19,12 @@ import {
 } from "../actions";
 
 export type CaseSettings = { refPrefix: string; qTemplates: Record<string, string[]>; defaultReplyDays: number };
-type P = { c: Case; members: Member[]; notes: Note[]; letters: QLetter[]; alerts: Alert[]; office: OfficeInfo; procRows: ProcRow[]; refs: Ref[]; settings: CaseSettings; canWrite: boolean };
+type P = { officeId: string; c: Case; members: Member[]; notes: Note[]; letters: QLetter[]; alerts: Alert[]; office: OfficeInfo; procRows: ProcRow[]; refs: Ref[]; settings: CaseSettings; canWrite: boolean };
 
 const panel = "rounded-2xl border border-line bg-white p-5";
 const btn = "rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-background";
 
-export default function CaseView({ c, members, notes, letters, alerts, refs, settings, office, procRows, canWrite }: P) {
+export default function CaseView({ officeId, c, members, notes, letters, alerts, refs, settings, office, procRows, canWrite }: P) {
   const [qSetup, setQSetup] = useState(false);
   const delivered = !!c.report_date;
   return (
@@ -49,6 +50,8 @@ export default function CaseView({ c, members, notes, letters, alerts, refs, set
           <h2 className="mb-3 font-semibold">إجراءات الدعوى</h2>
           <div className="flex flex-wrap gap-2">
             <DeliverButton c={c} delivered={delivered} />
+            <UpdateFromPdf c={c} officeId={officeId} />
+            {c.source_file && <SourceFileLink caseId={c.id} />}
             <form action={trashCase.bind(null, c.id)} id="trash" />
             <Confirm2
               label="حذف الدعوى"

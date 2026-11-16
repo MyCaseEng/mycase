@@ -49,6 +49,7 @@ export type Case = {
   report_date: string | null;
   created_at: string;
   proc_num?: "party" | "time";
+  source_file?: string | null;
   parties: Party[];
   events: Ev[];
   case_team: { user_id: string; duty: "executor" | "coordinator" }[];
@@ -56,7 +57,7 @@ export type Case = {
 export type Member = { user_id: string; display_name: string; short_name: string | null; role: string; is_active: boolean };
 
 const CASE_SELECT =
-  "id, case_no, case_type, category, authority, assign_src, circuit, judge, secretary, mission, received, prelim_date, deadline, due_note, deposit_ordered, claim_value, project_value, supplementary, status, report_date, created_at, proc_num, parties(*), events(*), case_team(user_id, duty)";
+  "id, case_no, case_type, category, authority, assign_src, circuit, judge, secretary, mission, received, prelim_date, deadline, due_note, deposit_ordered, claim_value, project_value, supplementary, status, report_date, created_at, proc_num, source_file, parties(*), events(*), case_team(user_id, duty)";
 
 export async function listCases(officeId: string) {
   const supabase = await createClient();
