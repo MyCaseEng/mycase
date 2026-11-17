@@ -1,6 +1,9 @@
 import { countryName, flagUrl, validCountry } from "@/lib/countries";
 import { SpecialtyIcon, specialtyOf } from "@/lib/specialties";
 
+const MEDAL =
+  "flex size-12 items-center justify-center rounded-full bg-brand-soft ring-1 ring-gold/50 ring-offset-4 ring-offset-white md:size-[84px]";
+
 // The office header: basmala and the verse are fixed; office name, expert and country come from the office.
 export default function Letterhead({
   officeName,
@@ -21,15 +24,15 @@ export default function Letterhead({
   return (
     <div className="border-b border-line bg-white">
       {/* Country flag at the far right, expertise icon at the far left, the letterhead text in between. */}
-      <div className="flex items-center gap-3 px-4 pb-3 pt-3.5 md:gap-6 md:px-10">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={flagUrl(code)}
-          alt=""
-          title={countryName(code)}
-          className="size-12 flex-none rounded-full object-cover shadow-sm ring-2 ring-gold/40 ring-offset-2 md:size-[88px]"
-        />
-        <div className="min-w-0 flex-1 text-center">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 pb-3 pt-3.5">
+        {/* Each medallion sits in the middle of its side space. The flag is shown whole (never cropped) inside the circle. */}
+        <div className="flex justify-center">
+          <span title={countryName(code)} className={MEDAL}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={flagUrl(code)} alt="" className="h-5 w-auto rounded-[3px] shadow-sm ring-1 ring-black/10 md:h-9" />
+          </span>
+        </div>
+        <div className="min-w-0 text-center">
         <div className="font-ruqaa text-[26px] font-bold leading-snug text-brand md:text-[34px]">بسم الله الرحمن الرحيم</div>
         <div className="font-amiri text-[14.5px] leading-relaxed text-muted md:text-base">
           ﴿إِنَّ اللَّهَ يَأْمُرُكُمْ أَن تُؤَدُّوا الْأَمَانَاتِ إِلَىٰ أَهْلِهَا وَإِذَا حَكَمْتُم بَيْنَ النَّاسِ أَن تَحْكُمُوا بِالْعَدْلِ﴾
@@ -51,13 +54,11 @@ export default function Letterhead({
           <span>{countryName(code)}</span>
         </div>
         </div>
-        <span
-          title={specialtyOf(specialty).name}
-          aria-label={specialtyOf(specialty).name}
-          className="flex size-12 flex-none items-center justify-center rounded-full bg-brand-soft text-brand shadow-sm ring-2 ring-gold/40 ring-offset-2 md:size-[88px]"
-        >
-          <SpecialtyIcon code={specialty} className="size-8 md:size-14" />
-        </span>
+        <div className="flex justify-center">
+          <span title={specialtyOf(specialty).name} aria-label={specialtyOf(specialty).name} className={`${MEDAL} text-brand`}>
+            <SpecialtyIcon code={specialty} className="size-7 md:size-12" />
+          </span>
+        </div>
       </div>
     </div>
   );
