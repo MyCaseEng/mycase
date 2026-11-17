@@ -24,7 +24,7 @@ export default function Letterhead({ officeName, expertName, country }: { office
           <div className="font-display text-[15.5px] font-semibold md:text-lg">
             {lead}
             {lead && person && <span className="mx-1.5 hidden text-gold md:inline">·</span>}
-            {person && <span className="block font-bold text-brand md:inline">{person}</span>}
+            {person && <span className="block md:inline">{person}</span>}
           </div>
         )}
         <div className="mt-1.5 flex items-center justify-center gap-2 font-display text-[13.5px] font-medium text-muted">
