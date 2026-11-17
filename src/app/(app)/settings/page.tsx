@@ -6,7 +6,7 @@ import { QTPL_DEFAULT } from "@/lib/refs";
 import { TEMPLATE_KINDS } from "@/lib/docs";
 import { SRCS } from "@/lib/format";
 import TemplateRow from "./template-row";
-import { COUNTRIES, validCountry } from "@/lib/countries";
+import { countryName, flagUrl, validCountry } from "@/lib/countries";
 
 async function saveOffice(form: FormData) {
   "use server";
@@ -18,7 +18,6 @@ async function saveOffice(form: FormData) {
       name: String(form.get("name") || "").trim(),
       expert_name: String(form.get("expert") || "").trim() || null,
       address: String(form.get("address") || "").trim() || null,
-      country: validCountry(form.get("country")),
     })
     .eq("id", ctx.officeId);
   revalidatePath("/", "layout");
@@ -68,14 +67,15 @@ export default async function SettingsPage() {
           <span className="text-sm text-muted">اسم الخبير (للتوقيع في الخطابات والتقارير)</span>
           <input name="expert" defaultValue={office?.expert_name ?? ""} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 disabled:bg-background" />
         </label>
-        <label className="block">
-          <span className="text-sm text-muted">الدولة (تظهر مع علمها في ترويسة المنصة)</span>
-          <select name="country" defaultValue={office?.country ?? "QA"} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 disabled:bg-background">
-            {COUNTRIES.map(([c, n]) => (
-              <option key={c} value={c}>{n}</option>
-            ))}
-          </select>
-        </label>
+        {/* The country is chosen once when the office is created; it is shown here, not edited. */}
+        <div>
+          <span className="text-sm text-muted">الدولة (تُحدَّد مرة واحدة عند إنشاء المكتب)</span>
+          <div className="mt-1 flex items-center gap-2 rounded-lg border border-line bg-background px-3 py-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={flagUrl(validCountry(office?.country))} alt="" width={20} height={13} className="h-[13px] w-auto rounded-[2px] ring-1 ring-line" />
+            {countryName(office?.country)}
+          </div>
+        </div>
         <label className="block">
           <span className="text-sm text-muted">عنوان المكتب (يُطبع في محضر المعاينة إذا كانت في مقر المكتب)</span>
           <input name="address" defaultValue={office?.address ?? ""} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 disabled:bg-background" />
