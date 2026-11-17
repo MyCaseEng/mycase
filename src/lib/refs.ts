@@ -74,4 +74,6 @@ export const QTPL_DEFAULT: Record<string, string[]> = {
 
 // For display in Arabic (right-to-left) text: each part keeps its place, so reading from the right gives
 // registration no / code / sequence / year, with the year last. Without the marks, «002/2026» would join into one run.
-export const showRef = (t: string) => t.replace(/\s*([/\-_.])\s*/g, "\u200F$1\u200F");
+// A pattern written only in Latin letters and digits (EXP-26-015) stays left-to-right as typed.
+export const showRef = (t: string) =>
+  /[\u0600-\u06FF]/.test(t) ? t.replace(/\s*([/\-_.])\s*/g, "\u200F$1\u200F") : `\u2066${t}\u2069`;
