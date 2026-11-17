@@ -20,25 +20,17 @@ export default function Letterhead({
   else if (!expertName) person = "";
   return (
     <div className="border-b border-line bg-white">
-      <div className="mx-auto max-w-4xl px-5 pb-3 pt-3.5 text-center">
-        {/* Country flag (right) · basmala · expertise icon (left), both medallions the same size. */}
-        <div className="flex items-center justify-center gap-4 md:gap-8">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={flagUrl(code)}
-            alt=""
-            title={countryName(code)}
-            className="size-11 flex-none rounded-full object-cover ring-2 ring-gold/40 ring-offset-2 md:size-14"
-          />
-          <div className="font-ruqaa text-[26px] font-bold leading-snug text-brand md:text-[34px]">بسم الله الرحمن الرحيم</div>
-          <span
-            title={specialtyOf(specialty).name}
-            aria-label={specialtyOf(specialty).name}
-            className="flex size-11 flex-none items-center justify-center rounded-full bg-brand-soft text-brand ring-2 ring-gold/40 ring-offset-2 md:size-14"
-          >
-            <SpecialtyIcon code={specialty} size={26} />
-          </span>
-        </div>
+      {/* Country flag at the far right, expertise icon at the far left, the letterhead text in between. */}
+      <div className="flex items-center gap-3 px-4 pb-3 pt-3.5 md:gap-6 md:px-10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={flagUrl(code)}
+          alt=""
+          title={countryName(code)}
+          className="size-12 flex-none rounded-full object-cover shadow-sm ring-2 ring-gold/40 ring-offset-2 md:size-[88px]"
+        />
+        <div className="min-w-0 flex-1 text-center">
+        <div className="font-ruqaa text-[26px] font-bold leading-snug text-brand md:text-[34px]">بسم الله الرحمن الرحيم</div>
         <div className="font-amiri text-[14.5px] leading-relaxed text-muted md:text-base">
           ﴿إِنَّ اللَّهَ يَأْمُرُكُمْ أَن تُؤَدُّوا الْأَمَانَاتِ إِلَىٰ أَهْلِهَا وَإِذَا حَكَمْتُم بَيْنَ النَّاسِ أَن تَحْكُمُوا بِالْعَدْلِ﴾
           <span className="ms-1.5 font-display text-[11.5px] text-gold">النساء: 58</span>
@@ -58,6 +50,14 @@ export default function Letterhead({
         <div className="mt-1.5 flex items-center justify-center gap-2 font-display text-[13.5px] font-medium text-muted">
           <span>{countryName(code)}</span>
         </div>
+        </div>
+        <span
+          title={specialtyOf(specialty).name}
+          aria-label={specialtyOf(specialty).name}
+          className="flex size-12 flex-none items-center justify-center rounded-full bg-brand-soft text-brand shadow-sm ring-2 ring-gold/40 ring-offset-2 md:size-[88px]"
+        >
+          <SpecialtyIcon code={specialty} className="size-8 md:size-14" />
+        </span>
       </div>
     </div>
   );
