@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 
 // Icons are the same line icons as the first platform.
@@ -14,6 +14,12 @@ const ICON: Record<string, React.ReactNode> = {
   "/platform": <><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></>,
   "/settings": <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></>,
 };
+
+// shows at once that a click was registered, while the next page loads
+function Pending() {
+  const { pending } = useLinkStatus();
+  return pending ? <span aria-hidden className="absolute inset-x-2 bottom-0 h-0.5 animate-pulse rounded-full bg-brand" /> : null;
+}
 
 const ITEMS = [
   { href: "/", label: "الصفحة الرئيسية" },
@@ -41,10 +47,10 @@ export default function Nav({ onNavigate, horizontal, owner }: { onNavigate?: ()
             className={
               horizontal
                 ? // top bar: a thin line under the open page
-                  `flex items-center gap-1.5 border-b-2 px-2 py-3 text-sm whitespace-nowrap transition-colors 2xl:px-3 ${
+                  `relative flex items-center gap-1.5 border-b-2 px-2 py-3 text-sm whitespace-nowrap transition-colors 2xl:px-3 ${
                     active ? "border-brand font-semibold text-brand" : "border-transparent text-muted hover:border-line hover:text-foreground"
                   }`
-                : `flex items-center gap-2.5 border-s-[3px] px-3 py-2 text-sm transition-colors ${
+                : `relative flex items-center gap-2.5 border-s-[3px] px-3 py-2 text-sm transition-colors ${
                     active ? "border-brand bg-brand-soft font-semibold text-brand" : "border-transparent text-muted hover:bg-background hover:text-foreground"
                   }`
             }
@@ -61,6 +67,7 @@ export default function Nav({ onNavigate, horizontal, owner }: { onNavigate?: ()
               </g>
             </svg>
             {it.label}
+            <Pending />
           </Link>
         );
       })}

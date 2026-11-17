@@ -6,14 +6,15 @@ import { QTPL_DEFAULT } from "@/lib/refs";
 import { TEMPLATE_KINDS } from "@/lib/docs";
 import { SRCS } from "@/lib/format";
 import TemplateRow from "./template-row";
+import SaveForm from "@/components/save-form";
 import { countryName, flagUrl, validCountry } from "@/lib/countries";
 import { SpecialtyIcon, specialtyOf } from "@/lib/specialties";
 
-async function saveOffice(form: FormData) {
+async function saveOffice(_: unknown, form: FormData): Promise<{ ok: boolean; text: string }> {
   "use server";
   const ctx = await getCtx();
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("offices")
     .update({
       name: String(form.get("name") || "").trim(),
@@ -21,10 +22,12 @@ async function saveOffice(form: FormData) {
       address: String(form.get("address") || "").trim() || null,
     })
     .eq("id", ctx.officeId);
-  revalidatePath("/", "layout");
+  if (error) return { ok: false, text: "تعذّر الحفظ: " + error.message };
+  revalidatePath("/", "layout"); // the office name is in the letterhead of every page
+  return { ok: true, text: "تم الحفظ" };
 }
 
-async function saveWork(form: FormData) {
+async function saveWork(_: unknown, form: FormData): Promise<{ ok: boolean; text: string }> {
   "use server";
   const ctx = await getCtx();
   const supabase = await createClient();
@@ -42,9 +45,13 @@ async function saveWork(form: FormData) {
     defaultReplyDays: Math.max(1, Number(form.get("defaultReplyDays") || 5)),
     qTemplates,
   };
-  await supabase.from("office_settings").upsert({ office_id: ctx.officeId, data, updated_at: new Date().toISOString() });
-  await supabase.from("activity").insert({ office_id: ctx.officeId, action: "تعديل إعدادات المكتب" });
-  revalidatePath("/", "layout");
+  const [{ error }] = await Promise.all([
+    supabase.from("office_settings").upsert({ office_id: ctx.officeId, data, updated_at: new Date().toISOString() }),
+    supabase.from("activity").insert({ office_id: ctx.officeId, action: "تعديل إعدادات المكتب" }),
+  ]);
+  if (error) return { ok: false, text: "تعذّر الحفظ: " + error.message };
+  revalidatePath("/settings"); // only this page shows these values; other pages read them fresh when opened
+  return { ok: true, text: "تم الحفظ" };
 }
 
 export default async function SettingsPage() {
@@ -58,7 +65,7 @@ export default async function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <h1 className="text-2xl font-bold">الإعدادات</h1>
-      <form action={saveOffice} className="space-y-4 rounded-xl border border-line bg-white p-5">
+      <SaveForm action={saveOffice} canSave={isAdmin} className="space-y-4 rounded-xl border border-line bg-white p-5">
         <h2 className="font-semibold">بيانات المكتب</h2>
         <label className="block">
           <span className="text-sm text-muted">اسم المكتب</span>
@@ -88,13 +95,9 @@ export default async function SettingsPage() {
           <span className="text-sm text-muted">عنوان المكتب (يُطبع في محضر المعاينة إذا كانت في مقر المكتب)</span>
           <input name="address" defaultValue={office?.address ?? ""} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 disabled:bg-background" />
         </label>
-        {isAdmin ? (
-          <button className="rounded-lg bg-ink hover:bg-ink-hover px-5 py-2 font-semibold text-white">حفظ</button>
-        ) : (
-          <p className="text-sm text-muted">يعدّل هذه البيانات مدير المكتب.</p>
-        )}
-      </form>
-      <form action={saveWork} className="space-y-4 rounded-xl border border-line bg-white p-5">
+        {!isAdmin && <p className="text-sm text-muted">يعدّل هذه البيانات مدير المكتب.</p>}
+      </SaveForm>
+      <SaveForm action={saveWork} canSave={isAdmin} className="space-y-4 rounded-xl border border-line bg-white p-5">
         <h2 className="font-semibold">الأرقام المرجعية والأسئلة</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
@@ -115,8 +118,7 @@ export default async function SettingsPage() {
             </div>
           ))}
         </div>
-        {isAdmin && <button className="rounded-lg bg-ink hover:bg-ink-hover px-5 py-2 font-semibold text-white">حفظ</button>}
-      </form>
+      </SaveForm>
       <section className="space-y-3 rounded-xl border border-line bg-white p-5">
         <h2 className="font-semibold">قوالب Word</h2>
         <p className="text-sm text-muted">

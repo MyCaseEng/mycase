@@ -47,3 +47,8 @@ h1, h2, h3 {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
+
+/* tactile feedback: every button visibly reacts to the click */
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
