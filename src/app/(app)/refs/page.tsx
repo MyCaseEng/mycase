@@ -1,7 +1,7 @@
 import { getCtx } from "@/lib/office";
 import { listRefs, listMembers, listCases } from "@/lib/cases";
 import { getSettings } from "@/lib/settings";
-import { fmtRef } from "@/lib/refs";
+import { refText } from "@/lib/refs";
 import { normCaseNo } from "@/lib/format";
 import RefsView, { type RefRow } from "./view";
 
@@ -19,7 +19,7 @@ export default async function RefsPage() {
   const nm = new Map(members.map((m) => [m.user_id, m.display_name]));
   const rows: RefRow[] = refs.map((r) => ({
     id: r.id,
-    ref: fmtRef(settings.refPrefix, r),
+    ref: refText(r, settings.refPrefix),
     year: r.year,
     seq: r.seq,
     category: r.category,

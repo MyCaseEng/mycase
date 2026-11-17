@@ -155,9 +155,9 @@ export function procAttsBySide(vis: ProcLine[]) {
 export type LetterKey = "start" | "postpone" | "deposit" | "both";
 // court letters: the wording lives in the standard forms (src/lib/forms.ts); here only the name and the register category
 export const LETTERS: Record<LetterKey, { label: string; cat: string }> = {
-  start: { label: "إخطار الأطراف ببدء المأمورية", cat: "إشعار بمباشرة المأمورية" },
+  start: { label: "إخطار الأطراف ببدء المأمورية", cat: "إخطار بدء المأمورية" },
   postpone: { label: "طلب تأجيل موعد إيداع تقرير الخبرة", cat: "طلب تأجيل" },
-  deposit: { label: "طلب إعادة تقدير الأمانة", cat: "طلب زيادة أمانة" },
+  deposit: { label: "طلب إعادة تقدير الأمانة", cat: "طلب إعادة تقدير الأمانة" },
   both: { label: "طلب تأجيل الإيداع وإعادة تقدير الأمانة", cat: "طلب تأجيل وإعادة تقدير الأمانة" },
 };
 
@@ -189,7 +189,7 @@ export function caseDocs(c: Case, letters: QLetter[], refs: Ref[]): DocItem[] {
   const main = [...sideOfCase(c, 1), ...sideOfCase(c, 2)];
   // 01: one notice per party that the mission has started
   main.forEach((p) =>
-    L.push({ key: `start-${p.id}`, kind: "start", party: p, label: `إخطار ${lilRole(p.role)} ببدء المأمورية`, sub: p.name, ref: live.find((r) => r.category === "إشعار بمباشرة المأمورية" && (r.title ?? "").includes(p.name)), category: "إشعار بمباشرة المأمورية" })
+    L.push({ key: `start-${p.id}`, kind: "start", party: p, label: `إخطار ${lilRole(p.role)} ببدء المأمورية`, sub: p.name, ref: live.find((r) => r.category === "إخطار بدء المأمورية" && (r.title ?? "").includes(p.name)), category: "إخطار بدء المأمورية" })
   );
   main.forEach((p) => {
     const qs = letters.filter((l) => l.party_id === p.id);
@@ -219,9 +219,9 @@ export function caseDocs(c: Case, letters: QLetter[], refs: Ref[]): DocItem[] {
   const insps = evs.filter((e) => e.type === "معاينة");
   insps.forEach((e) => L.push({ key: `insp-${e.id}`, kind: "insp", ev: e, label: "محضر المعاينة", sub: fmtD(e.date) + (e.place ? ` · ${e.place}` : ""), ref: refFor("محضر معاينة", e.id), category: "محضر معاينة" }));
   if (!insps.length) L.push({ key: "stub-i", kind: "insp", stub: true, label: "محضر المعاينة", sub: "لم يُحدَّد موعد", ref: refFor("محضر معاينة", null), category: "محضر معاينة" });
-  L.push({ key: "receipt", kind: "receipt", label: "محضر استلام مستندات", sub: "من أحد الأطراف", category: "وصل استلام" });
-  L.push({ key: "handover", kind: "handover", label: "محضر تسليم مستندات", sub: "إعادة الأصول أو تسليم مستندات", category: "وصل استلام" });
-  const repCat = c.supplementary ? "تقرير تكميلي" : "تقرير محكمة";
+  L.push({ key: "receipt", kind: "receipt", label: "محضر استلام مستندات", sub: "من أحد الأطراف", category: "محضر استلام مستندات" });
+  L.push({ key: "handover", kind: "handover", label: "محضر تسليم مستندات", sub: "إعادة الأصول أو تسليم مستندات", category: "محضر تسليم مستندات" });
+  const repCat = c.supplementary ? "تقرير تكميلي" : "تقرير خبرة";
   L.push({ key: "report", kind: "report", label: "تقرير الخبرة", sub: c.report_date ? `سُلّم ${fmtD(c.report_date)}` : "للمحكمة", ref: latest(repCat), category: repCat });
   lt("postpone");
   lt("deposit");

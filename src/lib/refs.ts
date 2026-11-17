@@ -1,36 +1,47 @@
 // Reference-number categories and format, ported from the prototype.
 // A number looks like "م ع/007/س أ/26": office prefix / sequence / category code / two-digit year.
 
+// Platform-wide document types for the reference register (neutral; the same for every office).
 export const REG_CATS: [string, string][] = [
-  ["محضر اجتماع", "م ج"],
-  ["محضر معاينة", "م ع"],
-  ["محضر مناقشة", "م ق"],
-  ["أسئلة واستفسارات", "س أ"],
-  ["طلب مستندات", "س أ"],
-  ["إشعار بمباشرة المأمورية", "إ م"],
-  ["تقرير محكمة", "ت م"],
-  ["تقرير تكميلي", "ت ك"],
-  ["تقرير هيئة تحكيم", "ت ه"],
-  ["تقرير استشاري خاص", "ت إ"],
-  ["كتاب محكمة", "ك م"],
-  ["إفادة بالإجراءات", "ك م"],
-  ["طلب زيادة أمانة", "ك م"],
-  ["طلب تأجيل", "ط ت"],
-  ["طلب تأجيل وإعادة تقدير الأمانة", "ط ت"],
-  ["طلب توضيحات", "ط ت"],
-  ["كتاب خبير", "ك خ"],
-  ["كتاب قبول مهمة", "ك ق"],
-  ["كتاب رد على شكوى", "ك و"],
-  ["كتاب النيابة", "ك ن"],
-  ["عرض خدمات", "ع خ"],
-  ["فاتورة خدمات", "ف خ"],
-  ["اتفاقية خدمات", "ا خ"],
-  ["وصل استلام", "و ا"],
+  ["إخطار بدء المأمورية", ""],
+  ["أسئلة واستفسارات", ""],
+  ["محضر اجتماع", ""],
+  ["محضر معاينة", ""],
+  ["طلب تأجيل", ""],
+  ["طلب إعادة تقدير الأمانة", ""],
+  ["طلب تأجيل وإعادة تقدير الأمانة", ""],
+  ["محضر استلام مستندات", ""],
+  ["محضر تسليم مستندات", ""],
+  ["تقرير خبرة", ""],
+  ["تقرير تكميلي", ""],
+  ["كتاب", ""],
+  ["أخرى", ""],
 ];
 export const regCode = (cat: string) => REG_CATS.find((c) => c[0] === cat)?.[1] ?? "";
 export const DEFAULT_PREFIX = "م ع";
+// numbers issued before the new system (no stored text) keep their old look
 export const fmtRef = (prefix: string, r: { seq: number; category: string; year: number }) =>
   [prefix || DEFAULT_PREFIX, String(r.seq).padStart(3, "0"), regCode(r.category), String(r.year).slice(-2)].filter(Boolean).join("/");
+// the number as issued: written once, with the office's pattern, by the database
+export const refText = (r: { ref_text?: string | null; seq: number; category: string; year: number }, prefix = "") => r.ref_text || fmtRef(prefix, r);
+
+// The office's own pattern. Tokens the expert can place in any order, with any separators.
+export const DEFAULT_PATTERN = "{قيد}/{نوع}/{تسلسل}/{سنة}";
+export const REF_TOKENS: [token: string, label: string][] = [
+  ["{قيد}", "رقم قيد الخبير"],
+  ["{نوع}", "نوع المستند"],
+  ["{تسلسل}", "التسلسل (001)"],
+  ["{سنة}", "السنة (2026)"],
+  ["{سنة2}", "السنة مختصرة (26)"],
+  ["{رقم_الدعوى}", "رقم الدعوى"],
+];
+// the same formatting as the database's format_ref(), for the live preview in settings
+export function formatRef(pattern: string, v: { reg?: string; cat: string; seq: number; year: number; caseNo?: string }) {
+  let t = (pattern || DEFAULT_PATTERN).trim();
+  t = t.split("{قيد}").join((v.reg ?? "").trim()).split("{نوع}").join(v.cat).split("{تسلسل}").join(String(v.seq).padStart(3, "0"));
+  t = t.split("{سنة2}").join(String(v.year).slice(-2)).split("{سنة}").join(String(v.year)).split("{رقم_الدعوى}").join((v.caseNo ?? "").trim());
+  return t.replace(/([/\-_.])\s*(\1\s*)+/g, "$1").replace(/^\s*[/\-_.]\s*|\s*[/\-_.]\s*$/g, "").trim();
+}
 
 export type Ref = {
   id: string;
@@ -43,6 +54,7 @@ export type Ref = {
   status: "فعال" | "ملغى";
   issued_by: string | null;
   issued_at: string;
+  ref_text?: string | null;
 };
 
 // Default expert questions (contracting cases), from the office's letter template.

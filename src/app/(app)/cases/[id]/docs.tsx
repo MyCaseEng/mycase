@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import type { Case, QLetter } from "@/lib/cases";
-import { fmtRef, regCode, type Ref } from "@/lib/refs";
+import { refText, type Ref } from "@/lib/refs";
 import { caseDocs, LETTERS, sideLabel, type DocItem, type LetterKey, type OfficeInfo, type ProcRow } from "@/lib/docs";
 import { saveBlob, safeName } from "@/lib/docx";
 import { courtForm, documentsForm, minutesForm, questionsForm, reportForm, startForm, type Filled } from "@/lib/forms";
@@ -55,7 +55,7 @@ export default function DocsPanel({ c, letters, refs, prefix, office, procRows, 
     setPick(null);
     if (d.kind === "qsetup") return onQuestions();
     if (d.kind === "letter") return setLetter({ k: d.letter!, withRef: how === "issue" });
-    if (how === "use") return generate(d, d.ref ? fmtRef(prefix, d.ref) : "");
+    if (how === "use") return generate(d, d.ref ? refText(d.ref, prefix) : "");
     if (how === "issue") return issueThen(d);
     return generate(d, "");
   }
@@ -73,7 +73,7 @@ export default function DocsPanel({ c, letters, refs, prefix, office, procRows, 
           >
             <div className="text-sm font-semibold">{d.label}</div>
             <div className="text-xs text-muted">{d.sub}</div>
-            {d.ref && <div className="mt-1 text-xs text-brand" dir="ltr" style={{ textAlign: "right" }}>{fmtRef(prefix, d.ref)}</div>}
+            {d.ref && <div className="mt-1 text-xs text-brand" dir="ltr" style={{ textAlign: "right" }}>{refText(d.ref, prefix)}</div>}
           </button>
         ))}
       </div>
@@ -84,7 +84,7 @@ export default function DocsPanel({ c, letters, refs, prefix, office, procRows, 
           <p className="mb-2 text-sm text-muted">{caseRef(c)} · {pick.sub}</p>
           <p className="mb-4 text-sm">
             {pick.ref ? (
-              <>صدر لهذا المستند الرقم <b dir="ltr">{fmtRef(prefix, pick.ref)}</b>.</>
+              <>صدر لهذا المستند الرقم <b dir="ltr">{refText(pick.ref, prefix)}</b>.</>
             ) : (
               "لم يصدر رقم مرجعي لهذا المستند بعد."
             )}
@@ -92,12 +92,12 @@ export default function DocsPanel({ c, letters, refs, prefix, office, procRows, 
           <div className="flex flex-col gap-2">
             {pick.ref && (
               <button onClick={() => choose(pick, "use")} className="rounded-lg bg-ink hover:bg-ink-hover px-4 py-2 font-semibold text-white">
-                إنشاء بالرقم {fmtRef(prefix, pick.ref)}
+                إنشاء بالرقم {refText(pick.ref, prefix)}
               </button>
             )}
             {canWrite && pick.category && (
               <button onClick={() => choose(pick, "issue")} className={`rounded-lg px-4 py-2 font-semibold ${pick.ref ? "border border-line" : "bg-ink hover:bg-ink-hover text-white"}`}>
-                {pick.ref ? "إصدار رقم جديد ثم إنشاء" : `إصدار رقم (${regCode(pick.category)}) ثم إنشاء`}
+                {pick.ref ? "إصدار رقم جديد ثم إنشاء" : "إصدار رقم مرجعي ثم إنشاء"}
               </button>
             )}
             <button onClick={() => choose(pick, "none")} className="rounded-lg border border-line px-4 py-2">
@@ -199,7 +199,7 @@ function LetterModal({ c, k, withRef, office, letters, procRows, onClose }: { c:
           </label>
         )}
       </div>
-      {withRef && <p className="mt-2 text-xs text-muted">سيصدر رقم مرجعي ({L.cat} · {regCode(L.cat)}) عند الإنشاء.</p>}
+      {withRef && <p className="mt-2 text-xs text-muted">سيصدر رقم مرجعي جديد ({L.cat}) عند الإنشاء.</p>}
       {err && <p className="mt-2 text-sm text-red-700">{err}</p>}
       <button disabled={busy} onClick={create} className="mt-4 rounded-lg bg-ink px-6 py-2 font-semibold text-white hover:bg-ink-hover disabled:opacity-60">
         {busy ? "جارٍ الإنشاء…" : "إنشاء الكتاب (Word)"}

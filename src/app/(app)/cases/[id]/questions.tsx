@@ -2,7 +2,7 @@
 import { useActionState, useState, useTransition } from "react";
 import type { Case, QLetter } from "@/lib/cases";
 import type { Ref } from "@/lib/refs";
-import { fmtRef } from "@/lib/refs";
+import { refText as refLabel } from "@/lib/refs";
 import { fmtD, dayDiff, todayStr, normRole } from "@/lib/format";
 import { Field, Modal, Msg, inputCls } from "@/components/ui";
 import Confirm2 from "@/components/confirm2";
@@ -41,12 +41,12 @@ export default function QuestionsPanel({ c, letters, refs, settings, office, can
       ) : (
         <div className="space-y-2">
           {letters.map((l) => (
-            <LetterRow key={l.id} c={c} l={l} partyName={party(l.party_id)?.name ?? l.addressee ?? "—"} partyRole={normRole(party(l.party_id)?.role)} refText={refOf(l.ref_id) ? fmtRef(settings.refPrefix, refOf(l.ref_id)!) : ""} canWrite={canWrite} onEdit={() => setEdit(l)} onMail={() => setMail(l)} office={office} />
+            <LetterRow key={l.id} c={c} l={l} partyName={party(l.party_id)?.name ?? l.addressee ?? "—"} partyRole={normRole(party(l.party_id)?.role)} refText={refOf(l.ref_id) ? refLabel(refOf(l.ref_id)!, settings.refPrefix) : ""} canWrite={canWrite} onEdit={() => setEdit(l)} onMail={() => setMail(l)} office={office} />
           ))}
         </div>
       )}
       {setup && <SetupModal c={c} settings={settings} onClose={() => { setSetup(false); onSetupClose?.(); }} />}
-      {mail && <MailModal c={c} l={mail} refText={refOf(mail.ref_id) ? fmtRef(settings.refPrefix, refOf(mail.ref_id)!) : ""} office={office} onClose={() => setMail(null)} />}
+      {mail && <MailModal c={c} l={mail} refText={refOf(mail.ref_id) ? refLabel(refOf(mail.ref_id)!, settings.refPrefix) : ""} office={office} onClose={() => setMail(null)} />}
       {edit && <EditModal c={c} l={edit} partyName={party(edit.party_id)?.name ?? ""} hasRef={!!edit.ref_id} onClose={() => setEdit(null)} />}
     </section>
   );

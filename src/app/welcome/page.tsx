@@ -19,7 +19,11 @@ async function createOffice(formData: FormData) {
   if (already?.length) redirect("/");
   const { data: officeId, error } = await supabase.rpc("create_office", { p_name: name, p_display_name: display });
   if (error) throw new Error(error.message);
-  await supabase.from("offices").update({ country: validCountry(formData.get("country")), specialty: validSpecialty(formData.get("specialty")) }).eq("id", officeId);
+  await supabase.from("offices").update({
+      country: validCountry(formData.get("country")),
+      specialty: validSpecialty(formData.get("specialty")),
+      expert_reg: String(formData.get("expert_reg") || "").trim().slice(0, 40) || null,
+    }).eq("id", officeId);
   redirect("/");
 }
 
@@ -91,6 +95,17 @@ async function Welcome() {
                 <option key={sp.code} value={sp.code}>{sp.name}</option>
               ))}
             </select>
+          </label>
+          <label className="block text-sm text-muted">
+            رقم قيد الخبير
+            <input
+              name="expert_reg"
+              dir="ltr"
+              maxLength={40}
+              placeholder="كما في شهادة القيد لدى الجهة المختصة"
+              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-right text-foreground outline-none focus:border-brand"
+            />
+            <span className="mt-1 block text-xs">يُطبع في ترويسة النماذج، ويدخل في الرقم المرجعي لمستنداتك. يمكن تعديله لاحقاً من الإعدادات.</span>
           </label>
           <input
             name="display"

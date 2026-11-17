@@ -6,6 +6,7 @@ import { QTPL_DEFAULT } from "@/lib/refs";
 import { FORM_KINDS } from "@/lib/forms";
 import { SRCS } from "@/lib/format";
 import TemplateRow from "./template-row";
+import RefPatternField from "./ref-pattern";
 import SaveForm from "@/components/save-form";
 import { countryName, flagUrl, validCountry } from "@/lib/countries";
 import { SpecialtyIcon, specialtyOf } from "@/lib/specialties";
@@ -44,15 +45,17 @@ async function saveWork(_: unknown, form: FormData): Promise<{ ok: boolean; text
   });
   const data = {
     ...((cur?.data as object) ?? {}),
-    refPrefix: String(form.get("refPrefix") || "").trim() || "م ع",
     defaultReplyDays: Math.max(1, Number(form.get("defaultReplyDays") || 5)),
     qTemplates,
   };
-  const [{ error }] = await Promise.all([
+  const pattern = String(form.get("refPattern") || "").trim();
+  if (!pattern.includes("{تسلسل}")) return { ok: false, text: "صيغة الرقم المرجعي يجب أن تحتوي على التسلسل {تسلسل}." };
+  const [{ error }, { error: e2 }] = await Promise.all([
     supabase.from("office_settings").upsert({ office_id: ctx.officeId, data, updated_at: new Date().toISOString() }),
+    supabase.from("offices").update({ ref_pattern: pattern }).eq("id", ctx.officeId),
     supabase.from("activity").insert({ office_id: ctx.officeId, action: "تعديل إعدادات المكتب" }),
   ]);
-  if (error) return { ok: false, text: "تعذّر الحفظ: " + error.message };
+  if (error || e2) return { ok: false, text: "تعذّر الحفظ: " + (error ?? e2)!.message };
   revalidatePath("/settings"); // only this page shows these values; other pages read them fresh when opened
   return { ok: true, text: "تم الحفظ" };
 }
@@ -118,10 +121,9 @@ export default async function SettingsPage() {
       <SaveForm action={saveWork} canSave={isAdmin} className="space-y-4 rounded-xl border border-line bg-white p-5">
         <h2 className="font-semibold">الأرقام المرجعية والأسئلة</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className="text-sm text-muted">بادئة الرقم المرجعي (مثال: م ع/007/س أ/26)</span>
-            <input name="refPrefix" defaultValue={st.refPrefix} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 disabled:bg-background" />
-          </label>
+          <div className="sm:col-span-2">
+            <RefPatternField initial={office?.ref_pattern ?? ""} reg={office?.expert_reg ?? ""} disabled={!isAdmin} />
+          </div>
           <label className="block">
             <span className="text-sm text-muted">مهلة الرد الافتراضية على الأسئلة (أيام)</span>
             <input name="defaultReplyDays" type="number" min={1} defaultValue={st.defaultReplyDays} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 disabled:bg-background" />
