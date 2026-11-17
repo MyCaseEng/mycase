@@ -5,6 +5,8 @@ import { notFound, redirect } from "next/navigation";
 import { BRAND } from "@/lib/brand";
 import { OfficeActions, TicketReply } from "./controls";
 import { KIND_LABEL, pageLabel } from "@/lib/support";
+import { signFiles } from "@/lib/support-actions";
+import { Attachments } from "@/components/support";
 import { createClient } from "@/lib/supabase/server";
 import { countryName, flagUrl } from "@/lib/countries";
 import { SpecialtyIcon, specialtyOf } from "@/lib/specialties";
@@ -56,8 +58,8 @@ async function Platform() {
   const { data: mine } = await supabase.from("members").select("office_id").eq("user_id", cl.claims.sub).eq("is_active", true).limit(1);
   const [{ data, error }, { data: tk }] = await Promise.all([supabase.rpc("platform_offices"), supabase.rpc("platform_tickets")]);
   if (error) throw new Error(error.message);
-  type T = { id: string; office_name: string | null; user_name: string | null; user_email: string | null; kind: string; subject: string; body: string; page: string | null; status: string; reply: string | null; replied_at: string | null; created_at: string };
-  const tickets = (tk ?? []) as T[];
+  type T = { id: string; office_name: string | null; user_name: string | null; user_email: string | null; kind: string; subject: string; body: string; page: string | null; status: string; reply: string | null; replied_at: string | null; created_at: string; files: string[] };
+  const tickets = await Promise.all(((tk ?? []) as T[]).map(async (x) => ({ ...x, atts: await signFiles(x.files ?? []) })));
   const openTickets = tickets.filter((x) => x.status === "open");
   const rows = (data ?? []) as Row[];
   const t = todayStr();
@@ -223,6 +225,7 @@ async function Platform() {
               {x.page && <span> · من صفحة «{pageLabel(x.page)}»</span>}
             </div>
             <p className="mt-2 whitespace-pre-line leading-7">{x.body}</p>
+            <Attachments atts={x.atts} />
             <TicketReply id={x.id} reply={x.reply} status={x.status} />
           </div>
         ))}
