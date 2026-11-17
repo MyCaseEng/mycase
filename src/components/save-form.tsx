@@ -17,13 +17,13 @@ export default function SaveForm({
   canSave?: boolean;
 }) {
   const [res, run, pending] = useActionState(action, null);
-  const [shown, setShown] = useState<Res>(null);
+  // a success note fades after 4 s; an error stays until the next save
+  const [hidden, setHidden] = useState<Res>(null);
+  const shown = res && res !== hidden ? res : null;
   useEffect(() => {
-    setShown(res);
-    if (res?.ok) {
-      const t = setTimeout(() => setShown(null), 4000);
-      return () => clearTimeout(t);
-    }
+    if (!res?.ok) return;
+    const t = setTimeout(() => setHidden(res), 4000);
+    return () => clearTimeout(t);
   }, [res]);
   return (
     <form action={run} className={className}>
