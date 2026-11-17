@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BRAND } from "@/lib/brand";
+import { isStaffEmail } from "@/lib/staff";
 import { myTickets } from "@/lib/support-actions";
 import { SupportForm, TicketList } from "@/components/support";
 
@@ -25,6 +26,20 @@ async function Suspended() {
   const supabase = await createClient();
   const { data: cl } = await supabase.auth.getClaims();
   if (!cl?.claims?.sub) redirect("/login");
+  // a team account stopped by its own office: nothing to ask the platform, only the office can reopen it
+  if (isStaffEmail(cl.claims.email as string | undefined)) {
+    return (
+      <main className="flex flex-1 items-start justify-center p-6">
+        <div className="mt-10 w-full max-w-md space-y-4 rounded-2xl border border-line bg-white p-7 text-center shadow-sm">
+          <h1 className="text-xl font-bold text-brand">حسابك غير مفعّل</h1>
+          <p className="leading-7 text-muted">أوقف مدير مكتبك هذا الحساب، أو أن المكتب نفسه موقوف. للاستفسار تواصل مع مدير مكتبك.</p>
+          <form action={signOut}>
+            <button className="text-sm text-muted hover:text-red-700">تسجيل الخروج</button>
+          </form>
+        </div>
+      </main>
+    );
+  }
   const list = await myTickets();
   return (
     <main className="flex flex-1 items-start justify-center p-6">

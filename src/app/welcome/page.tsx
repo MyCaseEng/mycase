@@ -5,6 +5,7 @@ import { BRAND } from "@/lib/brand";
 import SubmitButton from "@/components/submit-button";
 import { COUNTRIES, DEFAULT_COUNTRY, validCountry } from "@/lib/countries";
 import { TERMS_VERSION } from "@/lib/terms";
+import { isStaffEmail } from "@/lib/staff";
 import { SPECIALTIES, DEFAULT_SPECIALTY, validSpecialty } from "@/lib/specialties";
 
 // First sign-in with no office: create one (you become its admin) or wait for an invitation.
@@ -16,6 +17,7 @@ async function createOffice(formData: FormData) {
   const supabase = await createClient();
   // one office per new account: if this person already belongs to an office (e.g. the form was sent twice), go to it
   const { data: cl } = await supabase.auth.getClaims();
+  if (isStaffEmail(cl?.claims?.email as string | undefined)) redirect("/suspended");
   const { data: already } = await supabase.from("members").select("office_id").eq("user_id", cl?.claims?.sub ?? "").limit(1);
   if (already?.length) redirect("/");
   const { data: officeId, error } = await supabase.rpc("create_office", { p_name: name, p_display_name: display });
@@ -48,6 +50,8 @@ async function Welcome() {
   const supabase = await createClient();
   const { data: u } = await supabase.auth.getUser();
   if (!u.user) redirect("/login");
+  // team accounts belong to the office that made them; they never create an office
+  if (isStaffEmail(u.user.email)) redirect("/suspended");
   const { data: joined } = await supabase.rpc("accept_invitations");
   if (joined && joined > 0) redirect("/");
   // the platform owner never has to create an office

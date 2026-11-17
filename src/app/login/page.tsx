@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BRAND } from "@/lib/brand";
 import { TERMS_VERSION } from "@/lib/terms";
+import { isStaffId, toAuthEmail } from "@/lib/staff";
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -34,13 +35,14 @@ export default function LoginPage() {
     const origin = window.location.origin;
     try {
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: toAuthEmail(email), password });
         if (error) throw error;
         router.replace("/");
         router.refresh();
         return;
       }
       if (mode === "signup") {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) throw new Error("اكتب بريدًا إلكترونيًا صحيحًا. معرّفات الفريق يُنشئها مدير المكتب.");
         if (password.length < 8) throw new Error("كلمة المرور 8 أحرف على الأقل.");
         if (!agree) throw new Error("يلزم الموافقة على شروط الاستخدام لإنشاء الحساب.");
         const { data, error } = await supabase.auth.signUp({
@@ -57,6 +59,10 @@ export default function LoginPage() {
         setMsg({ ok: true, text: "أُرسلت رسالة تأكيد إلى بريدك. افتحها واضغط الرابط، ثم سجّل الدخول." });
       }
       if (mode === "forgot") {
+        if (isStaffId(email)) {
+          setMsg({ ok: true, text: "حسابات الفريق يعيد تعيين كلمة مرورها مدير المكتب من صفحة «الفريق». تواصل معه." });
+          return;
+        }
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${origin}/auth/callback?next=/reset-password`,
         });
@@ -85,12 +91,14 @@ export default function LoginPage() {
         <h1 className="mt-6 text-lg font-semibold">{title}</h1>
         <form onSubmit={submit} className="mt-4 space-y-3">
           <label className="block">
-            <span className="text-sm text-muted">البريد الإلكتروني</span>
+            <span className="text-sm text-muted">{mode === "signin" ? "البريد الإلكتروني أو معرّف الدخول" : "البريد الإلكتروني"}</span>
             <input
-              type="email"
+              type={mode === "signin" ? "text" : "email"}
               required
               dir="ltr"
-              autoComplete="email"
+              autoCapitalize="none"
+              autoComplete={mode === "signin" ? "username" : "email"}
+              placeholder={mode === "signin" ? "name@gmail.com  أو  ahmed@qat123" : undefined}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1 w-full rounded-lg border border-line px-3 py-2 outline-none focus:border-brand"

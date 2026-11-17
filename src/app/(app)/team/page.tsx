@@ -1,17 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCtx, ROLE_LABEL, type Role } from "@/lib/office";
-import { InviteForm, MemberControls, CancelInvite } from "./forms";
+import { StaffForm, MemberControls, CancelInvite, ResetPassword } from "./forms";
+import { officeLoginCode } from "@/lib/staff";
 
 export default async function TeamPage() {
   const ctx = await getCtx();
   const supabase = await createClient();
   const isAdmin = ctx.role === "admin";
-  const [{ data: members }, { data: invites }] = await Promise.all([
-    supabase.from("members").select("user_id, role, display_name, is_active").eq("office_id", ctx.officeId).order("created_at"),
+  const [{ data: members }, { data: invites }, { data: office }] = await Promise.all([
+    supabase.from("members").select("*").eq("office_id", ctx.officeId).order("created_at"),
     isAdmin
       ? supabase.from("invitations").select("id, email, display_name, role").eq("office_id", ctx.officeId).is("accepted_at", null)
       : Promise.resolve({ data: [] as { id: string; email: string; display_name: string; role: Role }[] }),
+    supabase.from("offices").select("*").eq("id", ctx.officeId).single(),
   ]);
+  const code: string = office?.login_code || officeLoginCode(office?.country, office?.expert_reg);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -25,6 +28,11 @@ export default async function TeamPage() {
               <div className="min-w-40 flex-1">
                 <div className={`font-semibold ${m.is_active ? "" : "text-muted line-through"}`}>{m.display_name}</div>
                 <div className="text-xs text-muted">
+                  {m.login && (
+                    <>
+                      <span dir="ltr" className="font-mono text-ink">{m.login}</span> ·{" "}
+                    </>
+                  )}
                   {ROLE_LABEL[m.role as Role]}
                   {m.user_id === ctx.userId ? " · أنت" : ""}
                   {m.is_active ? "" : " · موقوف"}
@@ -33,6 +41,7 @@ export default async function TeamPage() {
               {isAdmin && m.user_id !== ctx.userId && (
                 <MemberControls userId={m.user_id} role={m.role as Role} active={m.is_active} />
               )}
+              {isAdmin && m.user_id !== ctx.userId && m.login && m.is_active && <ResetPassword userId={m.user_id} />}
             </li>
           ))}
         </ul>
@@ -41,11 +50,19 @@ export default async function TeamPage() {
 
       {isAdmin && (
         <section className="rounded-xl border border-line bg-white p-5">
-          <h2 className="font-semibold">دعوة زميل</h2>
-          <p className="mt-1 text-sm text-muted">
-            اكتب بريده، ثم يفتح المنصة ويختار «إنشاء حساب جديد» بالبريد نفسه، فينضم إلى المكتب تلقائياً.
+          <h2 className="font-semibold">إضافة عضو إلى الفريق</h2>
+          <p className="mt-1 text-sm leading-7 text-muted">
+            تُنشئ أنت حساب الموظف: اكتب اسمه واسم دخول قصيرًا بالإنجليزية، فيصبح معرّفه مثل{" "}
+            <span dir="ltr" className="font-mono text-ink">ahmed@{code || "qat123"}</span>. تظهر لك كلمة مرور مؤقتة تعطيها له، ويغيّرها
+            هو عند أول دخول. لا يحتاج الموظف بريدًا إلكترونيًا.
           </p>
-          <InviteForm />
+          {code ? (
+            <StaffForm code={code} />
+          ) : (
+            <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+              أدخل رقم قيد الخبير من «الإعدادات» أولًا، فمنه ومن رمز دولتك يتكوّن رمز مكتبك في معرّفات الفريق.
+            </p>
+          )}
           {(invites ?? []).length > 0 && (
             <ul className="mt-5 divide-y divide-line rounded-lg border border-line">
               {(invites ?? []).map((i) => (
@@ -53,7 +70,7 @@ export default async function TeamPage() {
                   <span className="flex-1">
                     {i.display_name} · <span dir="ltr">{i.email}</span> · {ROLE_LABEL[i.role as Role]}
                   </span>
-                  <span className="text-xs text-muted">بانتظار التسجيل</span>
+                  <span className="text-xs text-muted">دعوة سابقة بالبريد · بانتظار التسجيل</span>
                   <CancelInvite id={i.id} />
                 </li>
               ))}
