@@ -5,9 +5,10 @@ import type { Case, Ev, Member, Note, Party, QLetter } from "@/lib/cases";
 import type { Ref } from "@/lib/refs";
 import QuestionsPanel from "./questions";
 import ArchivePanel from "./archive";
+import EventMail from "./event-mail";
 import DocsPanel from "./docs";
 import { UpdateFromPdf, SourceFileLink } from "./update-pdf";
-import type { OfficeInfo, ProcRow } from "@/lib/docs";
+import { OFFICE_PLACE, type OfficeInfo, type ProcRow } from "@/lib/docs";
 import type { Alert } from "@/lib/alerts";
 import { AlertLine } from "@/components/alerts-ui";
 import { fmtD, inDays, dayDiff, money, normCaseNo, normRole, srcOf, srcLabel, todayStr, ROLES1, ROLES2, ROLES3 } from "@/lib/format";
@@ -42,7 +43,7 @@ export default function CaseView({ officeId, c, members, notes, letters, alerts,
       <DataPanel c={c} canWrite={canWrite} />
       <DocsPanel c={c} letters={letters} refs={refs} prefix={settings.refPrefix} office={office} procRows={procRows} canWrite={canWrite} onQuestions={() => { setQSetup(true); document.getElementById("questions")?.scrollIntoView({ behavior: "smooth" }); }} />
       <QuestionsPanel c={c} letters={letters} refs={refs} settings={settings} office={office} canWrite={canWrite} openSetup={qSetup} onSetupClose={() => setQSetup(false)} />
-      <EventsPanel c={c} canWrite={canWrite} />
+      <EventsPanel c={c} canWrite={canWrite} office={office} />
       <ArchivePanel c={c} refs={refs} members={members} prefix={settings.refPrefix} canWrite={canWrite} />
       <TeamPanel c={c} members={members} canWrite={canWrite} />
       {canWrite && (
@@ -332,8 +333,9 @@ function HearingsModal({ c, hearings, onClose }: { c: Case; hearings: Ev[]; onCl
 }
 
 /* ---------------- المواعيد (اجتماعات ومعاينات) ---------------- */
-function EventsPanel({ c, canWrite }: { c: Case; canWrite: boolean }) {
+function EventsPanel({ c, canWrite, office }: { c: Case; canWrite: boolean; office: OfficeInfo }) {
   const [open, setOpen] = useState<Ev | "new" | null>(null);
+  const [mail, setMail] = useState<Ev | null>(null);
   const evs = c.events.filter((e) => e.type !== "جلسة").sort((a, b) => (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")));
   const who = (v: string) => (v === "1" ? "الطرف الأول" : v === "2" ? "الطرف الثاني" : "كل الأطراف");
   return (
@@ -371,9 +373,12 @@ function EventsPanel({ c, canWrite }: { c: Case; canWrite: boolean }) {
                   <td className="py-2" dir="ltr">{e.time?.slice(0, 5) ?? "—"}</td>
                   <td className="py-2">{e.place ?? "—"}</td>
                   <td className="py-2">{who(e.invited)}</td>
-                  <td className="py-2 text-left">
+                  <td className="whitespace-nowrap py-2 text-left">
+                    <button onClick={() => setMail(e)} title="إيميل الموعد للأطراف" className="me-3 rounded-md border border-line px-2 py-0.5 text-xs hover:border-brand">
+                      ✉ إيميل
+                    </button>
                     {canWrite && (
-                      <button onClick={() => setOpen(e)} className="text-muted hover:text-brand">
+                      <button onClick={() => setOpen(e)} title="تعديل الموعد" className="text-muted hover:text-brand">
                         ✎
                       </button>
                     )}
@@ -385,6 +390,7 @@ function EventsPanel({ c, canWrite }: { c: Case; canWrite: boolean }) {
         </div>
       )}
       {open && <EventModal caseId={c.id} e={open === "new" ? null : open} onClose={() => setOpen(null)} />}
+      {mail && <EventMail c={c} e={mail} office={office} onClose={() => setMail(null)} />}
     </section>
   );
 }
@@ -418,8 +424,11 @@ function EventModal({ caseId, e, onClose }: { caseId: string; e: Ev | null; onCl
         <Field label="الوقت">
           <input type="time" name="time" defaultValue={e?.time?.slice(0, 5) ?? ""} className={inputCls} />
         </Field>
-        <Field label="المكان (أو رابط الخريطة)" wide>
-          <input name="place" defaultValue={e?.place ?? ""} className={inputCls} />
+        <Field label="المكان (اكتبه، أو اختر «مقر مكتب الخبير»، أو الصق رابط الخريطة أو رابط Zoom)" wide>
+          <input name="place" list="ev-places" defaultValue={e?.place ?? ""} className={inputCls} />
+          <datalist id="ev-places">
+            <option value={OFFICE_PLACE} />
+          </datalist>
         </Field>
         <Field label="ملاحظة" wide>
           <input name="note" defaultValue={e?.note ?? ""} className={inputCls} />

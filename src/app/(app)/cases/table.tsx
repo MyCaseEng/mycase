@@ -1,7 +1,9 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SRCS } from "@/lib/format";
+import { SRCS, todayStr } from "@/lib/format";
+import { buildXlsx, CASE_COLS, XLSX_MIME } from "@/lib/xlsx";
+import { saveBlob } from "@/lib/docx";
 
 export type Row = {
   id: string;
@@ -16,6 +18,7 @@ export type Row = {
   reportDate: string;
   hearing: { date: string; days: number; past: boolean } | null;
   search: string;
+  x: (string | number)[];
 };
 
 const TABS = [
@@ -35,7 +38,7 @@ const SRC_TONE: Record<string, string> = {
 const fold = (t: string) =>
   t.replace(/[ً-ْـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").toLowerCase();
 
-export default function CasesTable({ rows }: { rows: Row[] }) {
+export default function CasesTable({ rows, xHeader, xColor }: { rows: Row[]; xHeader: string; xColor: string }) {
   const router = useRouter();
   const [tab, setTab] = useState<(typeof TABS)[number][0]>("active");
   const [q, setQ] = useState("");
@@ -53,6 +56,12 @@ export default function CasesTable({ rows }: { rows: Row[] }) {
   }, [rows, tab, q, src]);
   const count = (t: string) => rows.filter((r) => t === "all" || (t === "active" ? !r.delivered : r.delivered)).length;
   const open = (id: string) => router.push(`/cases/${id}`);
+  // exports exactly what is on screen now (tab, search and filter applied)
+  function exportXlsx() {
+    const title = TABS.find(([k]) => k === tab)![1] === "كل الدعاوى" ? "كل الدعاوى" : tab === "active" ? "الدعاوى النشطة" : "الدعاوى المسلّمة للمحكمة";
+    const data = buildXlsx({ header: xHeader, title, cols: CASE_COLS, rows: list.map((r, i) => [i + 1, ...r.x]), color: xColor });
+    saveBlob(`${title.replace(/ /g, "_")}_${todayStr()}.xlsx`, new Blob([data], { type: XLSX_MIME }));
+  }
 
   return (
     <div className="space-y-3">
@@ -74,6 +83,14 @@ export default function CasesTable({ rows }: { rows: Row[] }) {
           placeholder="بحث: رقم، طرف، محامٍ، قاضٍ…"
           className="min-w-56 flex-1 rounded-lg border border-line bg-white px-3 py-2"
         />
+        <button
+          onClick={exportXlsx}
+          disabled={!list.length}
+          title="تنزيل الدعاوى المعروضة الآن (بعد البحث والفلاتر) في ملف Excel"
+          className="rounded-lg border border-line bg-white px-3 py-2 text-sm hover:border-brand disabled:opacity-50"
+        >
+          تصدير Excel
+        </button>
         <select value={src} onChange={(e) => setSrc(e.target.value)} className="rounded-lg border border-line bg-white px-3 py-2">
           <option value="">كل جهات التكليف</option>
           {SRCS.map(([k, l]) => (

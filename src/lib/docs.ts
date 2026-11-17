@@ -1,7 +1,7 @@
 // Documents, letters and mission procedures, ported from the prototype. Pure functions (no I/O).
 import type { Case, Ev, Party, QLetter } from "@/lib/cases";
 import type { Ref } from "@/lib/refs";
-import { caseRef, fmtD, isOrg, normRole, roleSide, todayStr } from "@/lib/format";
+import { caseRef, fmtD, isOrg, normCaseNo, normRole, roleSide, todayStr } from "@/lib/format";
 import { DOTS } from "@/lib/docx";
 
 export const AR_DAYS = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
@@ -330,3 +330,47 @@ export const TEMPLATE_KINDS: [string, string][] = [
   ["inspection", "محضر معاينة"],
   ["report", "تقرير الخبرة"],
 ];
+
+/* ---------------- appointment emails (meetings and inspections) ---------------- */
+// Same wording as the first platform. {المخاطب} becomes «السادة / ... المحترمين» lines for the invited parties.
+export const EV_TPL: Record<"اجتماع" | "معاينة", { subject: string; body: string }> = {
+  اجتماع: {
+    subject: "موعد الإجتماع في الدعوى رقم {رقم_الدعوى} {نوع_الدعوى}",
+    body: "{المخاطب}\nتحية طيبة وبعد،\n\nالموضوع: موعد الإجتماع في الدعوى رقم {رقم_الدعوى} {نوع_الدعوى}\n\nبنــاءً علــى الحكم الصــادر مــن عدالـــة المحكمـة بندبنا خبيرا في الدعوى {رقم_الدعوى} {نوع_الدعوى} المقامة بين :\n\n{أطراف_الدعوى}\n\nنود أن نعلمكم أنه تم تحديد موعد الإجتماع معكم يوم {اليوم} الموافق لـ {التاريخ} على الساعة {الساعة}، وسيكون الإجتماع في {المكان}، ونطلب منكم حضوركم أو من تفوضونه للحضور نيابة عنكم مع تزويدنا بكتاب التفويض.\n{رابط_الموقع}\n{ملاحظة}\n\nوتفضلوا بقبول فائق الاحترام والتقدير،\n{اسم_الخبير}",
+  },
+  معاينة: {
+    subject: "موعد المعاينة في الدعوى رقم {رقم_الدعوى} {نوع_الدعوى}",
+    body: "{المخاطب}\nتحية طيبة وبعد،\n\nالموضوع: موعد المعاينة في الدعوى رقم {رقم_الدعوى} {نوع_الدعوى}\n\nبنــاءً علــى الحكم الصــادر مــن عدالـــة المحكمـة بندبنا خبيرا في الدعوى {رقم_الدعوى} {نوع_الدعوى} المقامة بين :\n\n{أطراف_الدعوى}\n\nنود أن نعلمكم أنه تم تحديد موعد المعاينة يوم {اليوم} الموافق لـ {التاريخ} على الساعة {الساعة}، وستكون المعاينة في {المكان}، ونطلب منكم حضوركم أو من تفوضونه للحضور نيابة عنكم مع تزويدنا بكتاب التفويض، وتسهيل دخولنا إلى الموقع.\n{رابط_الموقع}\n{ملاحظة}\n\nوتفضلوا بقبول فائق الاحترام والتقدير،\n{اسم_الخبير}",
+  },
+};
+export const fillTpl = (t: string, v: Record<string, string>) =>
+  t.replace(/\{([^{}]+)\}/g, (m, k) => (v[k] != null ? v[k] : m)).replace(/\n{3,}/g, "\n\n").trim();
+const isUrl = (s: string) => /^https?:\/\//i.test(s.trim());
+export function evMailVars(c: Case, e: Ev, office: OfficeInfo, addressees: Party[], toLawyer: (p: Party) => boolean) {
+  const place = (e.place ?? "").trim();
+  const online = /zoom|teams|meet\.google|أونلاين|عن بعد|عن بُعد/i.test(place);
+  const where = !place
+    ? "—"
+    : place === OFFICE_PLACE
+      ? office.address ? `مقر مكتبنا الكائن في ${office.address}` : "مقر مكتبنا"
+      : isUrl(place)
+        ? online ? "عن بُعد عبر الرابط أدناه" : "الموقع المحدد في الرابط أدناه"
+        : place;
+  const greet = addressees.map((p) => {
+    const a = partyAddr(p, toLawyer(p));
+    return `${a.title} / ${a.name} ${a.honor}${a.agent ? `\n${a.agent}` : ""}`;
+  });
+  return {
+    المخاطب: greet.join("\n") || "السادة / الأطراف المحترمين",
+    رقم_الدعوى: normCaseNo(c.case_no) || "—",
+    نوع_الدعوى: c.case_type ?? "",
+    أطراف_الدعوى: [sideLine(c, 1), "ضد", sideLine(c, 2)].filter(Boolean).join("\n"),
+    اليوم: e.date ? dayName(e.date) : "",
+    التاريخ: fmtD(e.date),
+    الساعة: e.time ? arTime(e.time) : "—",
+    المكان: where,
+    رابط_الموقع: isUrl(place) ? (online ? "رابط الاجتماع: " : "رابط الموقع على الخريطة: ") + place : "",
+    ملاحظة: e.note ? `ملاحظة: ${e.note}` : "",
+    اسم_الخبير: office.expertName ? `الخبير / ${office.expertName}` : "",
+  };
+}
