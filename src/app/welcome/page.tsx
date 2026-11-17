@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BRAND } from "@/lib/brand";
+import SubmitButton from "@/components/submit-button";
 import { COUNTRIES, DEFAULT_COUNTRY, validCountry } from "@/lib/countries";
 import { SPECIALTIES, DEFAULT_SPECIALTY, validSpecialty } from "@/lib/specialties";
 
@@ -12,6 +13,10 @@ async function createOffice(formData: FormData) {
   const display = String(formData.get("display") || "").trim();
   if (!name || !display) return;
   const supabase = await createClient();
+  // one office per new account: if this person already belongs to an office (e.g. the form was sent twice), go to it
+  const { data: cl } = await supabase.auth.getClaims();
+  const { data: already } = await supabase.from("members").select("office_id").eq("user_id", cl?.claims?.sub ?? "").limit(1);
+  if (already?.length) redirect("/");
   const { data: officeId, error } = await supabase.rpc("create_office", { p_name: name, p_display_name: display });
   if (error) throw new Error(error.message);
   await supabase.from("offices").update({ country: validCountry(formData.get("country")), specialty: validSpecialty(formData.get("specialty")) }).eq("id", officeId);
@@ -93,7 +98,9 @@ async function Welcome() {
             placeholder="اسمك كما يظهر للفريق"
             className="w-full rounded-lg border border-line px-3 py-2 outline-none focus:border-brand"
           />
-          <button className="w-full rounded-lg bg-ink hover:bg-ink-hover py-2.5 font-semibold text-white">إنشاء المكتب</button>
+          <SubmitButton pendingText="جارٍ إنشاء المكتب…" className="w-full rounded-lg bg-ink py-2.5 font-semibold text-white hover:bg-ink-hover">
+            إنشاء المكتب
+          </SubmitButton>
         </form>
         <form action={signOut}>
           <button className="text-xs text-muted hover:text-red-700">تسجيل الخروج</button>
