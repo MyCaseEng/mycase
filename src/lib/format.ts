@@ -36,8 +36,9 @@ export const caseNoKey = (c: { case_no?: string | null }) => {
 export const ROLES1 = ["المدعي", "الطالب", "المحتكم", "المستأنف", "الطاعن", "المتظلم", "الملتمس", "الشاكي", "المجني عليه", "المؤجر"];
 export const ROLES2 = ["المدعى عليه", "المطلوب ضده", "المحتكم ضده", "المستأنف ضده", "المطعون ضده", "المتظلم ضده", "الملتمس ضده", "المشكو في حقه", "المتهم", "المستأجر"];
 export const ROLES3 = ["الخصم المتدخل", "الخصم المدخل", "طرف آخر"];
+// the role exactly as the judgment words it: any added «(المدعي)»-style gloss in brackets is dropped
 export const normRole = (r?: string | null) =>
-  String(r || "").trim().replace(/^(ال)?مدعي$/, "المدعي").replace(/^مدعى عليه$/, "المدعى عليه");
+  String(r || "").replace(/\s*[(（][^)）]*[)）]\s*/g, " ").replace(/\s+/g, " ").trim().replace(/^(ال)?مدعي$/, "المدعي").replace(/^مدعى عليه$/, "المدعى عليه");
 export function roleSide(role: string): 1 | 2 | 3 {
   const k = (x: string) =>
     normRole(x)
