@@ -37,9 +37,10 @@ export async function createLetters(caseId: string, _: QRes, f: FormData): Promi
   for (const p of parties ?? []) {
     let refId: string | null = null;
     if (withRef) {
-      const { data } = await supabase.rpc("issue_ref_number", {
+      const { data, error: re } = await supabase.rpc("issue_ref_number", {
         p_office: ctx.officeId, p_category: "أسئلة واستفسارات", p_case: caseId, p_event: null, p_title: `أسئلة واستفسارات — ${p.name}`,
       });
+      if (re) return { ok: false, text: re.message.includes("NO_REG") ? "أدخل رقم قيد الخبير من «الإعدادات» أولًا، لأنه جزء من الرقم المرجعي." : re.message };
       refId = (data as { id: string } | null)?.id ?? null;
     }
     const { error } = await supabase.from("question_letters").insert({

@@ -5,6 +5,10 @@ import { getCtx } from "@/lib/office";
 import { getSettings } from "@/lib/settings";
 import { refText, type Ref } from "@/lib/refs";
 
+const NO_REG = "أدخل رقم قيد الخبير من «الإعدادات» أولًا، لأنه جزء من الرقم المرجعي.";
+const refError = (e: { code?: string; message: string }) =>
+  e.message.includes("NO_REG") ? NO_REG : e.code === "42501" ? "لا تملك صلاحية إصدار الأرقام." : e.message;
+
 export type IssueRes = { ok: boolean; text: string; ref?: string; id?: string } | null;
 
 // Issues the next number atomically in the database (no duplicates even when two people click together).
@@ -18,7 +22,7 @@ export async function issueRef(caseId: string | null, category: string, title: s
     p_event: eventId,
     p_title: title,
   });
-  if (error) return { ok: false, text: error.code === "42501" ? "لا تملك صلاحية إصدار الأرقام." : error.message };
+  if (error) return { ok: false, text: refError(error) };
   const r = data as Ref;
   const s = await getSettings(ctx.officeId);
   const ref = refText(r, s.refPrefix);
