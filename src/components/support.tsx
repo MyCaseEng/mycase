@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { Modal, Msg, inputCls } from "@/components/ui";
 import { myTickets, sendTicket, type Ticket } from "@/lib/support-actions";
 import { fmtD } from "@/lib/format";
+import { KIND_LABEL } from "@/lib/support";
 
-export const KIND_LABEL: Record<string, string> = { problem: "مشكلة", suggestion: "اقتراح", question: "استفسار" };
 
 export function SupportForm({ onSent }: { onSent?: () => void }) {
   const path = usePathname();

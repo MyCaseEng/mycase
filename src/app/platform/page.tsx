@@ -4,7 +4,7 @@ import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { BRAND } from "@/lib/brand";
 import { OfficeActions, TicketReply } from "./controls";
-import { KIND_LABEL } from "@/components/support";
+import { KIND_LABEL, pageLabel } from "@/lib/support";
 import { createClient } from "@/lib/supabase/server";
 import { countryName, flagUrl } from "@/lib/countries";
 import { SpecialtyIcon, specialtyOf } from "@/lib/specialties";
@@ -220,7 +220,7 @@ async function Platform() {
                   {x.user_email}
                 </a>
               )}
-              {x.page && <span> · من صفحة {x.page}</span>}
+              {x.page && <span> · من صفحة «{pageLabel(x.page)}»</span>}
             </div>
             <p className="mt-2 whitespace-pre-line leading-7">{x.body}</p>
             <TicketReply id={x.id} reply={x.reply} status={x.status} />
