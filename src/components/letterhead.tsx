@@ -1,5 +1,8 @@
-// The office header from the first platform: basmala, the verse, ornament, office name and Qatar.
-export default function Letterhead({ officeName, expertName }: { officeName: string; expertName: string }) {
+import { countryName, flagUrl, validCountry } from "@/lib/countries";
+
+// The office header: basmala and the verse are fixed; office name, expert and country come from the office.
+export default function Letterhead({ officeName, expertName, country }: { officeName: string; expertName: string; country: string }) {
+  const code = validCountry(country);
   let lead = officeName;
   let person = expertName;
   if (expertName && officeName.includes(expertName)) lead = officeName.replace(expertName, "").trim();
@@ -25,14 +28,9 @@ export default function Letterhead({ officeName, expertName }: { officeName: str
           </div>
         )}
         <div className="mt-1.5 flex items-center justify-center gap-2 font-display text-[13.5px] font-medium text-muted">
-          <svg viewBox="0 0 28 11" width="34" height="13" role="img" aria-label="علم قطر" className="rounded-[2px] ring-1 ring-line">
-            <rect width="28" height="11" fill="#8A1538" />
-            <polygon
-              fill="#fff"
-              points="0,0 8,0 10.5,0.611 8,1.222 10.5,1.833 8,2.444 10.5,3.056 8,3.667 10.5,4.278 8,4.889 10.5,5.500 8,6.111 10.5,6.722 8,7.333 10.5,7.944 8,8.556 10.5,9.167 8,9.778 10.5,10.389 8,11.000 0,11"
-            />
-          </svg>
-          <span>دولة قطر</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={flagUrl(code)} alt="" width={20} height={13} className="h-[13px] w-auto rounded-[2px] ring-1 ring-line" />
+          <span>{countryName(code)}</span>
         </div>
       </div>
     </div>

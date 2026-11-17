@@ -39,7 +39,7 @@ async function SignedIn({ children }: { children: React.ReactNode }) {
     .sort((a, b) => LEVEL_ORDER[a.alerts[0].level] - LEVEL_ORDER[b.alerts[0].level]);
   return (
     <Shell officeName={ctx.officeName} user={{ name: ctx.displayName, role: ROLE_LABEL[ctx.role] }} signOut={signOut} bell={<Bell groups={groups} />}
-      letterhead={<Letterhead officeName={ctx.officeName} expertName={info.expertName} />}
+      letterhead={<Letterhead officeName={ctx.officeName} expertName={info.expertName} country={info.country} />}
     >
       {children}
     </Shell>
