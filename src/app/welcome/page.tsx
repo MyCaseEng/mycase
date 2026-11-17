@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BRAND } from "@/lib/brand";
 import { COUNTRIES, DEFAULT_COUNTRY, validCountry } from "@/lib/countries";
+import { SPECIALTIES, DEFAULT_SPECIALTY, validSpecialty } from "@/lib/specialties";
 
 // First sign-in with no office: create one (you become its admin) or wait for an invitation.
 async function createOffice(formData: FormData) {
@@ -13,7 +14,7 @@ async function createOffice(formData: FormData) {
   const supabase = await createClient();
   const { data: officeId, error } = await supabase.rpc("create_office", { p_name: name, p_display_name: display });
   if (error) throw new Error(error.message);
-  await supabase.from("offices").update({ country: validCountry(formData.get("country")) }).eq("id", officeId);
+  await supabase.from("offices").update({ country: validCountry(formData.get("country")), specialty: validSpecialty(formData.get("specialty")) }).eq("id", officeId);
   redirect("/");
 }
 
@@ -59,16 +60,30 @@ async function Welcome() {
             placeholder="اسم المكتب"
             className="w-full rounded-lg border border-line px-3 py-2 outline-none focus:border-brand"
           />
-          <select
-            name="country"
-            defaultValue={DEFAULT_COUNTRY}
-            aria-label="دولة المكتب"
-            className="w-full rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-brand"
-          >
-            {COUNTRIES.map(([c, n]) => (
-              <option key={c} value={c}>{n}</option>
-            ))}
-          </select>
+          <label className="block text-sm text-muted">
+            دولة المكتب
+            <select
+              name="country"
+              defaultValue={DEFAULT_COUNTRY}
+              className="mt-1 w-full rounded-lg border border-line bg-white text-foreground px-3 py-2 outline-none focus:border-brand"
+            >
+              {COUNTRIES.map(([c, n]) => (
+                <option key={c} value={c}>{n}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm text-muted">
+            نوع وتخصص الخبرة
+            <select
+              name="specialty"
+              defaultValue={DEFAULT_SPECIALTY}
+              className="mt-1 w-full rounded-lg border border-line bg-white text-foreground px-3 py-2 outline-none focus:border-brand"
+            >
+              {SPECIALTIES.map((sp) => (
+                <option key={sp.code} value={sp.code}>{sp.name}</option>
+              ))}
+            </select>
+          </label>
           <input
             name="display"
             required

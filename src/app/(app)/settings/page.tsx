@@ -7,6 +7,7 @@ import { TEMPLATE_KINDS } from "@/lib/docs";
 import { SRCS } from "@/lib/format";
 import TemplateRow from "./template-row";
 import { countryName, flagUrl, validCountry } from "@/lib/countries";
+import { SpecialtyIcon, specialtyOf } from "@/lib/specialties";
 
 async function saveOffice(form: FormData) {
   "use server";
@@ -74,6 +75,13 @@ export default async function SettingsPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={flagUrl(validCountry(office?.country))} alt="" width={20} height={13} className="h-[13px] w-auto rounded-[2px] ring-1 ring-line" />
             {countryName(office?.country)}
+          </div>
+        </div>
+        <div>
+          <span className="text-sm text-muted">نوع وتخصص الخبرة (يُحدَّد مرة واحدة عند إنشاء المكتب)</span>
+          <div className="mt-1 flex items-center gap-2 rounded-lg border border-line bg-background px-3 py-2">
+            <span className="text-brand"><SpecialtyIcon code={office?.specialty} size={18} /></span>
+            {specialtyOf(office?.specialty).name}
           </div>
         </div>
         <label className="block">

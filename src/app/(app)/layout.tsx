@@ -41,7 +41,7 @@ async function SignedIn({ children }: { children: React.ReactNode }) {
   return (
     <Shell officeName={ctx.officeName} user={{ name: ctx.displayName, role: ROLE_LABEL[ctx.role] }} signOut={signOut} bell={<Bell groups={groups} />}
       theme={themeVars(info.country)}
-      letterhead={<Letterhead officeName={ctx.officeName} expertName={info.expertName} country={info.country} />}
+      letterhead={<Letterhead officeName={ctx.officeName} expertName={info.expertName} country={info.country} specialty={info.specialty} />}
     >
       {children}
     </Shell>

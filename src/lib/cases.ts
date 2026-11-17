@@ -164,5 +164,5 @@ export async function listProcRows(caseId: string) {
 export async function getOfficeInfo(officeId: string) {
   const supabase = await createClient();
   const { data } = await supabase.from("offices").select("*").eq("id", officeId).single();
-  return { expertName: data?.expert_name ?? "", address: data?.address ?? "", country: (data?.country as string | undefined) ?? "QA" };
+  return { expertName: data?.expert_name ?? "", address: data?.address ?? "", country: (data?.country as string | undefined) ?? "QA", specialty: (data?.specialty as string | undefined) ?? "eng" };
 }

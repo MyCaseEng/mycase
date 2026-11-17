@@ -1,7 +1,18 @@
 import { countryName, flagUrl, validCountry } from "@/lib/countries";
+import { SpecialtyIcon, specialtyOf } from "@/lib/specialties";
 
 // The office header: basmala and the verse are fixed; office name, expert and country come from the office.
-export default function Letterhead({ officeName, expertName, country }: { officeName: string; expertName: string; country: string }) {
+export default function Letterhead({
+  officeName,
+  expertName,
+  country,
+  specialty,
+}: {
+  officeName: string;
+  expertName: string;
+  country: string;
+  specialty: string;
+}) {
   const code = validCountry(country);
   let lead = officeName;
   let person = expertName;
@@ -10,7 +21,24 @@ export default function Letterhead({ officeName, expertName, country }: { office
   return (
     <div className="border-b border-line bg-white">
       <div className="mx-auto max-w-4xl px-5 pb-3 pt-3.5 text-center">
-        <div className="font-ruqaa text-[28px] font-bold leading-snug text-brand md:text-[34px]">بسم الله الرحمن الرحيم</div>
+        {/* Country flag (right) · basmala · expertise icon (left), both medallions the same size. */}
+        <div className="flex items-center justify-center gap-4 md:gap-8">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={flagUrl(code)}
+            alt=""
+            title={countryName(code)}
+            className="size-11 flex-none rounded-full object-cover ring-2 ring-gold/40 ring-offset-2 md:size-14"
+          />
+          <div className="font-ruqaa text-[26px] font-bold leading-snug text-brand md:text-[34px]">بسم الله الرحمن الرحيم</div>
+          <span
+            title={specialtyOf(specialty).name}
+            aria-label={specialtyOf(specialty).name}
+            className="flex size-11 flex-none items-center justify-center rounded-full bg-brand-soft text-brand ring-2 ring-gold/40 ring-offset-2 md:size-14"
+          >
+            <SpecialtyIcon code={specialty} size={26} />
+          </span>
+        </div>
         <div className="font-amiri text-[14.5px] leading-relaxed text-muted md:text-base">
           ﴿إِنَّ اللَّهَ يَأْمُرُكُمْ أَن تُؤَدُّوا الْأَمَانَاتِ إِلَىٰ أَهْلِهَا وَإِذَا حَكَمْتُم بَيْنَ النَّاسِ أَن تَحْكُمُوا بِالْعَدْلِ﴾
           <span className="ms-1.5 font-display text-[11.5px] text-gold">النساء: 58</span>
@@ -28,8 +56,6 @@ export default function Letterhead({ officeName, expertName, country }: { office
           </div>
         )}
         <div className="mt-1.5 flex items-center justify-center gap-2 font-display text-[13.5px] font-medium text-muted">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={flagUrl(code)} alt="" width={20} height={13} className="h-[13px] w-auto rounded-[2px] ring-1 ring-line" />
           <span>{countryName(code)}</span>
         </div>
       </div>
