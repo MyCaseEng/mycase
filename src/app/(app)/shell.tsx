@@ -13,8 +13,10 @@ export default function Shell({
   bell,
   letterhead,
   theme,
+  owner,
   children,
 }: {
+  owner: boolean;
   theme: React.CSSProperties;
   letterhead: React.ReactNode;
   bell: React.ReactNode;
@@ -43,7 +45,7 @@ export default function Shell({
           </button>
           <div className="py-2">{logo}</div>
           <div className="hidden min-w-0 flex-1 justify-center xl:flex">
-            <Nav horizontal />
+            <Nav horizontal owner={owner} />
           </div>
           <div className="ms-auto flex items-center gap-3 xl:ms-0">
             {bell}
@@ -61,7 +63,7 @@ export default function Shell({
           <div className="absolute inset-0 bg-black/30" />
           <aside className="absolute inset-y-0 right-0 flex w-64 flex-col gap-5 bg-white p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
             {logo}
-            <Nav onNavigate={() => setOpen(false)} />
+            <Nav onNavigate={() => setOpen(false)} owner={owner} />
             <div className="mt-auto border-t border-line pt-3 text-sm">
               <div className="font-semibold">{user.name}</div>
               <div className="text-xs text-muted">{user.role}</div>
