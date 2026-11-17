@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCtx } from "@/lib/office";
 import { getSettings } from "@/lib/settings";
-import { refText, type Ref } from "@/lib/refs";
+import { refText, showRef, type Ref } from "@/lib/refs";
 
 const NO_REG = "أدخل رقم قيد الخبير من «الإعدادات» أولًا، لأنه جزء من الرقم المرجعي.";
 const refError = (e: { code?: string; message: string }) =>
@@ -29,7 +29,7 @@ export async function issueRef(caseId: string | null, category: string, title: s
   await supabase.from("activity").insert({ office_id: ctx.officeId, action: "إصدار رقم مرجعي", case_id: caseId, detail: { ref, category } });
   revalidatePath("/refs");
   if (caseId) revalidatePath(`/cases/${caseId}`);
-  return { ok: true, text: `صدر الرقم ${ref}`, ref, id: r.id };
+  return { ok: true, text: `صدر الرقم ${showRef(ref)}`, ref, id: r.id };
 }
 
 export async function issueFromForm(_: IssueRes, f: FormData): Promise<IssueRes> {
