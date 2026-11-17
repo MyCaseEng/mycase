@@ -45,7 +45,7 @@ function Review({ ex, path, existing, onReset }: { officeId: string; ex: Extract
       <input type="hidden" name="sessions_json" value={JSON.stringify(sessions)} />
       <input type="hidden" name="source_file" value={path} />
 
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-7">
+      <div className="rounded-xl border border-gold/40 bg-gold-soft p-4 text-sm leading-7">
         <b>استُخرجت البيانات من الملف.</b> راجع الحقول وصحّح ما يلزم، ثم احفظ. لن يُحفظ شيء قبل الضغط على «حفظ الدعوى».
         {ex.judgmentPages && <div>الحكم التمهيدي في الصفحات: <b>{ex.judgmentPages}</b></div>}
         {"pages" in ex && (ex as { pages: number }).pages > 25 && <div className="text-muted">الملف {(ex as { pages: number }).pages} صفحة؛ بُحث فيه كله ثم قُرئت بدقة {(ex as unknown as { read: number }).read} صفحة مهمة.</div>}

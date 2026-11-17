@@ -36,7 +36,7 @@ export default function ImportPdf({ officeId, folder, onDone, label = "استي�
       onDragOver={(e) => { e.preventDefault(); setOver(true); }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { e.preventDefault(); setOver(false); const f = e.dataTransfer.files[0]; if (f) run(f); }}
-      className={`rounded-xl border-2 border-dashed p-5 text-center ${over ? "border-brand bg-blue-50" : "border-line bg-white"}`}
+      className={`rounded-xl border-2 border-dashed p-5 text-center ${over ? "border-brand bg-brand-soft" : "border-line bg-white"}`}
     >
       <input ref={input} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) run(f); e.target.value = ""; }} />
       {step ? (

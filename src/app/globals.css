@@ -1,12 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f4ef;
-  --foreground: #1c2430;
-  --brand: #1e3a5f;
-  --gold: #c9a24f;
-  --muted: #5f6b7a;
-  --line: #e2ddd2;
+  /* Same identity as the first platform: Qatar maroon, brass, warm paper. */
+  --background: #fbf8f3;
+  --foreground: #2a1a1e;
+  --brand: #8a1538;
+  --brand-soft: #f6e6ea;
+  --gold: #96713a;
+  --gold-soft: #f4e9d8;
+  --muted: #6b5e5a;
+  --line: #e9dfd3;
+  --surface-2: #f5ede4;
 }
 
 @theme inline {
@@ -16,11 +20,26 @@
   --color-gold: var(--gold);
   --color-muted: var(--muted);
   --color-line: var(--line);
-  --font-sans: "Segoe UI", Tahoma, "Noto Sans Arabic", "Geeza Pro", Arial, sans-serif;
+  --color-brand-soft: var(--brand-soft);
+  --color-gold-soft: var(--gold-soft);
+  --color-surface-2: var(--surface-2);
+  --font-sans: "IBM Plex Sans Arabic", Tahoma, "Segoe UI", sans-serif;
+  --font-display: "Readex Pro", "IBM Plex Sans Arabic", Tahoma, sans-serif;
+  --font-ruqaa: "Aref Ruqaa", "Amiri", serif;
+  --font-amiri: "Amiri", serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+}
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }

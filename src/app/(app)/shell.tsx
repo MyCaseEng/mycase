@@ -10,8 +10,10 @@ export default function Shell({
   user,
   signOut,
   bell,
+  letterhead,
   children,
 }: {
+  letterhead: React.ReactNode;
   bell: React.ReactNode;
   officeName: string;
   user: { name: string; role: string };
@@ -24,7 +26,7 @@ export default function Shell({
       <div className="flex items-center gap-3">
         <Image src="/icons/icon-192.png" alt="" width={36} height={36} className="rounded-lg" />
         <div className="min-w-0 flex-1">
-          <div className="font-bold text-brand">{BRAND.name}</div>
+          <div className="font-display text-lg font-bold leading-tight text-brand">{BRAND.name}</div>
           <div className="truncate text-xs text-muted">{officeName}</div>
         </div>
         <span className="hidden md:block">{bell}</span>
@@ -55,9 +57,10 @@ export default function Shell({
           <button onClick={() => setOpen(true)} aria-label="القائمة" className="rounded-lg border border-line px-2.5 py-1 text-lg">
             ☰
           </button>
-          <span className="flex-1 font-bold text-brand">{BRAND.name}</span>
+          <span className="flex-1 font-display font-bold text-brand">{BRAND.name}</span>
           {bell}
         </header>
+        {letterhead}
         <main className="flex-1 p-4 md:p-8">{children}</main>
       </div>
     </div>

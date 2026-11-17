@@ -12,7 +12,7 @@ const addDays = (d: string, n: number) => {
   t.setUTCDate(t.getUTCDate() + n);
   return t.toISOString().slice(0, 10);
 };
-const TYPE_TONE: Record<string, string> = { اجتماع: "bg-blue-50 text-blue-800", معاينة: "bg-emerald-50 text-emerald-800", جلسة: "bg-red-50 text-red-800" };
+const TYPE_TONE: Record<string, string> = { اجتماع: "bg-gold-soft text-gold", معاينة: "bg-emerald-50 text-emerald-800", جلسة: "bg-brand-soft text-brand" };
 
 export default async function Home() {
   const ctx = await getCtx();
@@ -108,7 +108,7 @@ export default async function Home() {
         <h2 className="mb-3 font-semibold">الأيام الـ14 القادمة</h2>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           {days.map(({ d, items }) => (
-            <div key={d} className={`min-h-24 rounded-xl border p-2 ${d === t ? "border-brand bg-blue-50/40" : "border-line"} ${["الجمعة", "السبت"].includes(wd(d)) ? "opacity-60" : ""}`}>
+            <div key={d} className={`min-h-24 rounded-xl border p-2 ${d === t ? "border-brand bg-brand-soft/50" : "border-line"} ${["الجمعة", "السبت"].includes(wd(d)) ? "opacity-60" : ""}`}>
               <div className="text-xs font-semibold">{wd(d)}</div>
               <div className="mb-1 text-xs text-muted">{fmtD(d).slice(5)}</div>
               <div className="space-y-1">

@@ -104,7 +104,7 @@ export default function CasesTable({ rows }: { rows: Row[] }) {
                 // a finger tap opens directly (double tap is awkward on phones); a mouse click only selects
                 onClick={(e) => ((e.nativeEvent as PointerEvent).pointerType === "touch" ? open(r.id) : setSel(r.id))}
                 onDoubleClick={() => open(r.id)}
-                className={`cursor-pointer border-t border-line align-top ${sel === r.id ? "bg-blue-50" : "hover:bg-background"}`}
+                className={`cursor-pointer border-t border-line align-top ${sel === r.id ? "bg-brand-soft" : "hover:bg-background"}`}
               >
                 <td className="px-3 py-3 text-muted">{i + 1}</td>
                 <td className="px-3 py-3">

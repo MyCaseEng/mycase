@@ -3,6 +3,6 @@ export const BRAND = {
   name: "MyCase",
   shortName: "MyCase",
   tagline: "منصة إدارة دعاوى الخبرة الهندسية",
-  themeColor: "#1e3a5f",
-  backgroundColor: "#f6f4ef",
+  themeColor: "#8a1538",
+  backgroundColor: "#fbf8f3",
 } as const;
