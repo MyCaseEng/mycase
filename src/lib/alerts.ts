@@ -1,6 +1,6 @@
 // Alert rules, ported from the prototype. Pure functions: same input → same alerts, on server or client.
 import type { Case, QLetter } from "@/lib/cases";
-import { dayDiff, fmtD, todayStr } from "@/lib/format";
+import { dayDiff, days, fmtD, todayStr } from "@/lib/format";
 
 export const AL_RULES = { RECENT: 60, Q_AFTER: 2, Q_RED: 5, SCHED_AFTER: 7, SCHED_RED: 14, HEAR_DAYS: 14, DL_DAYS: 14 };
 
@@ -26,7 +26,7 @@ export function caseAlerts(c: Case, letters: QLetter[], snoozes: Snooze[] = []):
 
   // questions not prepared yet
   if (recent && !letters.length && age >= AL_RULES.Q_AFTER)
-    add("noq", age >= AL_RULES.Q_RED ? "red" : "amber", `لم تُرسل أسئلة الخبير للأطراف (منذ ورود الدعوى ${age} يوم)`, "questions", "إعداد الأسئلة");
+    add("noq", age >= AL_RULES.Q_RED ? "red" : "amber", `لم تُرسل أسئلة الخبير للأطراف (منذ ورود الدعوى ${days(age)})`, "questions", "إعداد الأسئلة");
 
   // reply periods
   letters.forEach((l) => {
@@ -35,7 +35,7 @@ export function caseAlerts(c: Case, letters: QLetter[], snoozes: Snooze[] = []):
     else if (l.sent_at && qOpen(l) && l.due) {
       const dd = dayDiff(l.due);
       const part = l.reply_type === "partial" ? "رد جزئياً و" : "";
-      if (dd < 0) add(`qlate|${l.id}`, "red", `${pname(l.party_id)} ${part}انتهت مهلة رده منذ ${-dd} يوم`, "questions", "تسجيل الرد أو التمديد");
+      if (dd < 0) add(`qlate|${l.id}`, "red", `${pname(l.party_id)} ${part}انتهت مهلة رده منذ ${days(dd)}`, "questions", "تسجيل الرد أو التمديد");
       else if (dd <= 1) add(`qdue|${l.id}`, "amber", `تنتهي مهلة رد ${pname(l.party_id)} ${dd === 0 ? "اليوم" : "غداً"}`, "questions", "فتح الأسئلة");
     }
   });
@@ -45,7 +45,7 @@ export function caseAlerts(c: Case, letters: QLetter[], snoozes: Snooze[] = []):
     const allReplied = main.length > 0 && main.every((p) => letters.some((l) => l.party_id === p.id && l.reply_type === "full"));
     if (allReplied) add("sched", "red", "وصلت ردود الأطراف ولم يُحدَّد موعد اجتماع أو معاينة", "event", "إضافة موعد");
     else if (age >= AL_RULES.SCHED_AFTER)
-      add("sched", age >= AL_RULES.SCHED_RED ? "red" : "amber", `لم يُحدَّد اجتماع ولا معاينة (منذ ورود الدعوى ${age} يوم)`, "event", "إضافة موعد");
+      add("sched", age >= AL_RULES.SCHED_RED ? "red" : "amber", `لم يُحدَّد اجتماع ولا معاينة (منذ ورود الدعوى ${days(age)})`, "event", "إضافة موعد");
   }
 
   // today / tomorrow
@@ -63,17 +63,17 @@ export function caseAlerts(c: Case, letters: QLetter[], snoozes: Snooze[] = []):
     const dd = dayDiff(next.date);
     if (dd <= AL_RULES.HEAR_DAYS)
       add(`hear|${next.date}`, dd <= 3 ? "red" : dd <= 7 ? "amber" : "calm",
-        `الجلسة ${dd === 0 ? "اليوم" : dd === 1 ? "غداً" : `بعد ${dd} يوم`} (${fmtD(next.date)}): جهّز التقرير أو كتاب طلب التأجيل`, "case", "فتح الدعوى");
+        `الجلسة ${dd === 0 ? "اليوم" : dd === 1 ? "غداً" : `بعد ${days(dd)}`} (${fmtD(next.date)}): جهّز التقرير أو كتاب طلب التأجيل`, "case", "فتح الدعوى");
   } else if (hearings.length) {
     const last = hearings.at(-1)!;
-    add(`hearpast|${last.date}`, "amber", `آخر جلسة مسجّلة (${fmtD(last.date)}) فاتت ولم تُسجَّل الجلسة التالية`, "hearings", "تسجيل الجلسة الجديدة");
+    add(`hearpast|${last.date}`, "amber", `آخر جلسة مسجّلة (${fmtD(last.date)}) مضى عليها ${days(dayDiff(last.date))} — سجّل الجلسة التالية`, "hearings", "تسجيل الجلسة الجديدة");
   }
 
   // report deadline
   if (c.deadline) {
     const dd = dayDiff(c.deadline);
     if (dd <= AL_RULES.DL_DAYS)
-      add("dl", dd <= 3 ? "red" : "amber", dd < 0 ? `تجاوز الموعد النهائي للتقرير بـ ${-dd} يوم` : `الموعد النهائي للتقرير ${dd === 0 ? "اليوم" : `بعد ${dd} يوم`}`, "case", "فتح الدعوى");
+      add("dl", dd <= 3 ? "red" : "amber", dd < 0 ? `تجاوز الموعد النهائي للتقرير بـ ${days(dd)}` : `الموعد النهائي للتقرير ${dd === 0 ? "اليوم" : `بعد ${days(dd)}`}`, "case", "فتح الدعوى");
   }
 
   // missing contact emails

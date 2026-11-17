@@ -8,7 +8,7 @@ export const AR_DAYS = ["الأحد", "الإثنين", "الثلاثاء", "ا�
 export const dayName = (d: string) => AR_DAYS[new Date(d + "T00:00:00Z").getUTCDay()];
 export const OFFICE_PLACE = "مقر مكتب الخبير";
 const Q_DAYS: Record<number, string> = { 1: "يوم واحد", 2: "يومين", 3: "ثلاثة أيام", 4: "أربعة أيام", 5: "خمسة أيام", 6: "ستة أيام", 7: "سبعة أيام", 8: "ثمانية أيام", 9: "تسعة أيام", 10: "عشرة أيام", 14: "أربعة عشر يوماً", 15: "خمسة عشر يوماً" };
-export const qDaysTxt = (n: number) => Q_DAYS[n] || `${n} يوماً`;
+export const qDaysTxt = (n: number) => Q_DAYS[n] || `${n} يومًا`;
 
 export function arTime(t?: string | null) {
   if (!t || !/^\d{1,2}:\d{2}/.test(t)) return "";

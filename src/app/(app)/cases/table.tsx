@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SRCS, todayStr } from "@/lib/format";
+import { SRCS, todayStr, days } from "@/lib/format";
 import { buildXlsx, CASE_COLS, XLSX_MIME } from "@/lib/xlsx";
 import { saveBlob } from "@/lib/docx";
 
@@ -155,13 +155,13 @@ export default function CasesTable({ rows, xHeader, xColor }: { rows: Row[]; xHe
                     ) : r.hearing.past ? (
                       <>
                         <div className="text-muted line-through">{r.hearing.date}</div>
-                        <div className="text-xs text-amber-700">فاتت منذ {-r.hearing.days} يوم</div>
+                        <div className="text-xs text-amber-700">مضى عليها {days(r.hearing.days)}</div>
                       </>
                     ) : (
                       <>
                         <div className={r.hearing.days <= 7 ? "font-semibold text-red-700" : ""}>{r.hearing.date}</div>
                         <div className="text-xs text-muted">
-                          {r.hearing.days === 0 ? "اليوم" : r.hearing.days === 1 ? "غداً" : `بعد ${r.hearing.days} يوم`}
+                          {r.hearing.days === 0 ? "اليوم" : r.hearing.days === 1 ? "غداً" : `بعد ${days(r.hearing.days)}`}
                         </div>
                       </>
                     )}

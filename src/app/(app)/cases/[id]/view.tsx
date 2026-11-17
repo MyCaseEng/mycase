@@ -11,7 +11,7 @@ import { UpdateFromPdf, SourceFileLink } from "./update-pdf";
 import { OFFICE_PLACE, type OfficeInfo, type ProcRow } from "@/lib/docs";
 import type { Alert } from "@/lib/alerts";
 import { AlertLine } from "@/components/alerts-ui";
-import { fmtD, inDays, dayDiff, money, normCaseNo, normRole, srcOf, srcLabel, todayStr, ROLES1, ROLES2, ROLES3 } from "@/lib/format";
+import { fmtD, inDays, dayDiff, days, money, normCaseNo, normRole, srcOf, srcLabel, todayStr, ROLES1, ROLES2, ROLES3 } from "@/lib/format";
 import { Field, Modal, Msg, inputCls } from "@/components/ui";
 import Confirm2 from "@/components/confirm2";
 import CaseFields from "../case-fields";
@@ -161,7 +161,7 @@ function DataPanel({ c, canWrite }: { c: Case; canWrite: boolean }) {
         ) : last ? (
           <span>
             <span className="text-muted line-through">{fmtD(last.date)}</span>{" "}
-            <span className="text-sm text-amber-700">فاتت منذ {-dayDiff(last.date)} يوم، سجّل الجلسة الجديدة</span>
+            <span className="text-sm text-amber-700">مضى عليها {days(dayDiff(last.date))} — سجّل الجلسة التالية</span>
           </span>
         ) : (
           <span className="text-muted">لا توجد جلسة مسجّلة</span>

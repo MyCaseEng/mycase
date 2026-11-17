@@ -9,9 +9,14 @@ export const todayStr = () => {
 export const fmtD = (d?: string | null) => (d ? d.slice(0, 10).replace(/-/g, ".") : "—");
 export const dayDiff = (d: string) =>
   Math.round((Date.parse(d.slice(0, 10) + "T00:00:00Z") - Date.parse(todayStr() + "T00:00:00Z")) / 864e5);
+// correct Arabic counting: يوم واحد، يومين، 3 أيام … 10 أيام، 11 يومًا فأكثر
+export const days = (n: number) => {
+  n = Math.abs(n);
+  return n === 1 ? "يوم واحد" : n === 2 ? "يومين" : n <= 10 ? `${n} أيام` : `${n} يومًا`;
+};
 export const inDays = (d: string) => {
   const n = dayDiff(d);
-  return n === 0 ? "اليوم" : n === 1 ? "غداً" : n === -1 ? "أمس" : n > 0 ? `بعد ${n} يوم` : `منذ ${-n} يوم`;
+  return n === 0 ? "اليوم" : n === 1 ? "غداً" : n === -1 ? "أمس" : n > 0 ? `بعد ${days(n)}` : `منذ ${days(n)}`;
 };
 
 export function normCaseNo(v?: string | null) {

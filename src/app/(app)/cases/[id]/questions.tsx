@@ -3,7 +3,7 @@ import { useActionState, useState, useTransition } from "react";
 import type { Case, QLetter } from "@/lib/cases";
 import type { Ref } from "@/lib/refs";
 import { refText as refLabel, showRef } from "@/lib/refs";
-import { fmtD, dayDiff, todayStr, normRole } from "@/lib/format";
+import { fmtD, dayDiff, days, todayStr, normRole } from "@/lib/format";
 import { Field, Modal, Msg, inputCls } from "@/components/ui";
 import Confirm2 from "@/components/confirm2";
 import { createLetters, updateLetter, markSent, setReply, deleteLetter, issueLetterRef, type QRes } from "../q-actions";
@@ -78,7 +78,7 @@ function LetterRow({ c, l, partyName, partyRole, refText, canWrite, onEdit, onMa
     : l.reply_type === "partial"
       ? `رد جزئي ${fmtD(l.reply_date)}`
       : l.sent_at
-        ? left != null && left < 0 ? `انتهت المهلة منذ ${-left} يوم` : "بانتظار الرد"
+        ? left != null && left < 0 ? `انتهت المهلة منذ ${days(left)}` : "بانتظار الرد"
         : "لم يُرسل بعد";
   const b = (on: boolean) => `rounded-lg px-3 py-1.5 text-sm font-semibold ${on ? "bg-ink hover:bg-ink-hover text-white" : "border border-line hover:bg-background"}`;
   return (

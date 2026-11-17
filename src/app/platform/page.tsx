@@ -10,7 +10,7 @@ import { Attachments } from "@/components/support";
 import { createClient } from "@/lib/supabase/server";
 import { countryName, flagUrl } from "@/lib/countries";
 import { SpecialtyIcon, specialtyOf } from "@/lib/specialties";
-import { fmtD, todayStr, dayDiff } from "@/lib/format";
+import { fmtD, todayStr, dayDiff, days } from "@/lib/format";
 
 export const metadata = { title: "لوحة المنصة" };
 
@@ -68,7 +68,7 @@ async function Platform() {
     const d = day(iso);
     if (!d) return "—";
     const n = -dayDiff(d);
-    return n <= 0 ? "اليوم" : n === 1 ? "أمس" : `قبل ${n} يوماً`;
+    return n <= 0 ? "اليوم" : n === 1 ? "أمس" : `قبل ${days(n)}`;
   };
   const newWeek = rows.filter((r) => -dayDiff(day(r.created_at)!) <= 7).length;
   const activeWeek = rows.filter((r) => r.last_activity && -dayDiff(day(r.last_activity)!) <= 7).length;

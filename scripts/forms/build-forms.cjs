@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // MyCase standard forms (platform-wide, approved 2026.11.17).
 // Writes public/forms/<kind>.docx. The platform fills the {{KEYS}} with the office's and the case's data
 // (src/lib/forms.ts); an office that uploads its own template for a kind overrides the standard one.
