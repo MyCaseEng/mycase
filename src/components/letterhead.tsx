@@ -8,7 +8,7 @@ export default function Letterhead({ officeName, expertName, country }: { office
   if (expertName && officeName.includes(expertName)) lead = officeName.replace(expertName, "").trim();
   else if (!expertName) person = "";
   return (
-    <div className="border-b-2 border-brand bg-white">
+    <div className="border-b border-line bg-white">
       <div className="mx-auto max-w-4xl px-5 pb-3 pt-3.5 text-center">
         <div className="font-ruqaa text-[28px] font-bold leading-snug text-brand md:text-[34px]">بسم الله الرحمن الرحيم</div>
         <div className="font-amiri text-[14.5px] leading-relaxed text-muted md:text-base">

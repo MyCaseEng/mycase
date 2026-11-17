@@ -47,7 +47,7 @@ export default function ScheduleView({ items }: { items: Item[] }) {
           <button
             key={k}
             onClick={() => setKind(k)}
-            className={`rounded-full px-4 py-1.5 text-sm ${kind === k ? "bg-brand text-white" : "border border-line bg-white"}`}
+            className={`rounded-full px-4 py-1.5 text-sm ${kind === k ? "bg-ink hover:bg-ink-hover text-white" : "border border-line bg-white"}`}
           >
             {l}
           </button>

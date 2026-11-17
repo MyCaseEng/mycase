@@ -75,7 +75,7 @@ async function Welcome() {
             placeholder="اسمك كما يظهر للفريق"
             className="w-full rounded-lg border border-line px-3 py-2 outline-none focus:border-brand"
           />
-          <button className="w-full rounded-lg bg-brand py-2.5 font-semibold text-white">إنشاء المكتب</button>
+          <button className="w-full rounded-lg bg-ink hover:bg-ink-hover py-2.5 font-semibold text-white">إنشاء المكتب</button>
         </form>
         <form action={signOut}>
           <button className="text-xs text-muted hover:text-red-700">تسجيل الخروج</button>

@@ -35,7 +35,7 @@ export function SnoozeModal({ a, onClose }: { a: Alert; onClose: () => void }) {
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted">حتى تاريخ:</span>
         <input type="date" value={date} min={todayStr()} onChange={(e) => setDate(e.target.value)} className="rounded-lg border border-line px-2 py-1 text-sm" />
-        <button disabled={pending} onClick={() => go(date)} className="rounded-lg bg-brand px-3 py-1.5 text-sm font-semibold text-white">
+        <button disabled={pending} onClick={() => go(date)} className="rounded-lg bg-ink hover:bg-ink-hover px-3 py-1.5 text-sm font-semibold text-white">
           إخفاء
         </button>
       </div>

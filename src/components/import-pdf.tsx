@@ -46,7 +46,7 @@ export default function ImportPdf({ officeId, folder, onDone, label = "استي�
         </div>
       ) : (
         <>
-          <button type="button" onClick={() => input.current?.click()} className="rounded-lg bg-brand px-5 py-2 font-semibold text-white">
+          <button type="button" onClick={() => input.current?.click()} className="rounded-lg bg-ink hover:bg-ink-hover px-5 py-2 font-semibold text-white">
             {label}
           </button>
           <p className="mt-2 text-xs text-muted">أو اسحب الملف إلى هنا. يُقرأ الملف كله، والحكم التمهيدي قد يكون في أي صفحة. يُحفظ الملف مع الدعوى.</p>

@@ -36,8 +36,8 @@ export default function Nav({ onNavigate }: { onNavigate?: () => void }) {
             key={it.href}
             href={it.href}
             onClick={onNavigate}
-            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              active ? "bg-brand text-white" : "text-muted hover:bg-brand-soft hover:text-brand"
+            className={`flex items-center gap-2.5 border-s-[3px] px-3 py-2 text-sm transition-colors ${
+              active ? "border-brand bg-brand-soft font-semibold text-brand" : "border-transparent text-muted hover:bg-background hover:text-foreground"
             }`}
           >
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className={`flex-none ${active ? "" : "opacity-85"}`}>

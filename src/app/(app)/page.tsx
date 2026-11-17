@@ -54,23 +54,23 @@ export default async function Home() {
       </div>
 
       {/* hero: the next meeting or inspection */}
-      <section className="grid gap-4 rounded-2xl bg-brand p-5 text-white md:grid-cols-[1.3fr_1fr]">
+      <section className="grid gap-4 rounded-2xl border border-line border-s-4 border-s-brand bg-white p-5 md:grid-cols-[1.3fr_1fr]">
         <div>
-          <div className="text-sm opacity-80">الموعد القادم</div>
+          <div className="text-sm text-muted">الموعد القادم</div>
           {nextVisit ? (
             <Link href={`/cases/${nextVisit.c.id}`} className="block">
-              <div className="mt-1 text-2xl font-bold">
+              <div className="mt-1 font-display text-2xl font-bold text-brand">
                 {nextVisit.e.type} · {wd(nextVisit.e.date)} {fmtD(nextVisit.e.date)}
                 {nextVisit.e.time ? ` · ${nextVisit.e.time.slice(0, 5)}` : ""}
               </div>
-              <div className="mt-1 opacity-90">({inDays(nextVisit.e.date)}) · {label(nextVisit.c)}</div>
-              <div className="text-sm opacity-80">
+              <div className="mt-1">({inDays(nextVisit.e.date)}) · {label(nextVisit.c)}</div>
+              <div className="text-sm text-muted">
                 {[sideOf(nextVisit.c, 1)[0]?.name, sideOf(nextVisit.c, 2)[0]?.name].filter(Boolean).join(" ضد ")}
                 {nextVisit.e.place ? ` · ${nextVisit.e.place}` : ""}
               </div>
             </Link>
           ) : (
-            <div className="mt-1 text-xl font-semibold opacity-90">لا توجد اجتماعات أو معاينات قادمة</div>
+            <div className="mt-1 text-xl font-semibold text-muted">لا توجد اجتماعات أو معاينات قادمة</div>
           )}
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3">
@@ -78,13 +78,13 @@ export default async function Home() {
             const body = (
               <>
                 <div className="text-2xl font-bold">{n}</div>
-                <div className="text-xs opacity-85">{l}</div>
+                <div className="text-xs text-muted">{l}</div>
               </>
             );
             return href ? (
-              <Link key={l} href={href} className="rounded-xl bg-white/10 p-3 hover:bg-white/20">{body}</Link>
+              <Link key={l} href={href} className="rounded-xl border border-line bg-background p-3 hover:border-gold/50">{body}</Link>
             ) : (
-              <div key={l} className="rounded-xl bg-white/10 p-3">{body}</div>
+              <div key={l} className="rounded-xl border border-line bg-background p-3">{body}</div>
             );
           })}
         </div>

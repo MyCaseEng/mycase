@@ -28,7 +28,7 @@ export default function NewCaseForm() {
       </fieldset>
       <CaseFields />
       <Msg res={res} />
-      <button disabled={pending} className="rounded-lg bg-brand px-6 py-2.5 font-semibold text-white disabled:opacity-60">
+      <button disabled={pending} className="rounded-lg bg-ink hover:bg-ink-hover px-6 py-2.5 font-semibold text-white disabled:opacity-60">
         {pending ? "جارٍ الحفظ…" : "حفظ الدعوى"}
       </button>
     </form>

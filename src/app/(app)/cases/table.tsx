@@ -61,7 +61,7 @@ export default function CasesTable({ rows }: { rows: Row[] }) {
           <button
             key={k}
             onClick={() => setTab(k)}
-            className={`rounded-full px-4 py-1.5 text-sm ${tab === k ? "bg-brand text-white" : "border border-line bg-white"}`}
+            className={`rounded-full px-4 py-1.5 text-sm ${tab === k ? "bg-ink hover:bg-ink-hover text-white" : "border border-line bg-white"}`}
           >
             {l} <span className="opacity-70">({count(k)})</span>
           </button>

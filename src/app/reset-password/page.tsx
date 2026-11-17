@@ -33,7 +33,7 @@ export default function ResetPasswordPage() {
           className="w-full rounded-lg border border-line px-3 py-2 outline-none focus:border-brand"
         />
         {msg && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{msg}</p>}
-        <button disabled={busy} className="w-full rounded-lg bg-brand py-2.5 font-semibold text-white disabled:opacity-60">
+        <button disabled={busy} className="w-full rounded-lg bg-ink hover:bg-ink-hover py-2.5 font-semibold text-white disabled:opacity-60">
           حفظ
         </button>
       </form>

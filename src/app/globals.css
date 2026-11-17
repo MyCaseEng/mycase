@@ -4,10 +4,12 @@
   /* Same identity as the first platform: Qatar maroon, brass, warm paper. */
   --background: #fbf8f3;
   --foreground: #2a1a1e;
-  --brand: #8a1538;
-  --brand-soft: color-mix(in srgb, var(--brand) 9%, white);
+  --brand: #7a2840;
+  --ink: #2f3437;
+  --ink-hover: #42484c;
+  --brand-soft: color-mix(in srgb, var(--brand) 7%, white);
   --gold: #96713a;
-  --gold-soft: color-mix(in srgb, var(--gold) 14%, white);
+  --gold-soft: color-mix(in srgb, var(--gold) 11%, white);
   --muted: #6b5e5a;
   --line: #e9dfd3;
   --surface-2: #f5ede4;
@@ -21,6 +23,8 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-brand-soft: var(--brand-soft);
+  --color-ink: var(--ink);
+  --color-ink-hover: var(--ink-hover);
   --color-gold-soft: var(--gold-soft);
   --color-surface-2: var(--surface-2);
   --font-sans: "IBM Plex Sans Arabic", Tahoma, "Segoe UI", sans-serif;

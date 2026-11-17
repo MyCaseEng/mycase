@@ -172,7 +172,7 @@ function DataPanel({ c, canWrite }: { c: Case; canWrite: boolean }) {
         )}
         <span className="flex-1" />
         {canWrite && (
-          <button onClick={() => setEdit(true)} className="rounded-lg bg-brand px-4 py-1.5 text-sm font-semibold text-white">
+          <button onClick={() => setEdit(true)} className="rounded-lg bg-ink hover:bg-ink-hover px-4 py-1.5 text-sm font-semibold text-white">
             ✎ تعديل البيانات
           </button>
         )}
@@ -239,7 +239,7 @@ function EditCaseModal({ c, onClose }: { c: Case; onClose: () => void }) {
       <form action={action} className="space-y-4">
         <CaseFields c={c} />
         <Msg res={res} />
-        <button disabled={pending} className="rounded-lg bg-brand px-6 py-2 font-semibold text-white disabled:opacity-60">
+        <button disabled={pending} className="rounded-lg bg-ink hover:bg-ink-hover px-6 py-2 font-semibold text-white disabled:opacity-60">
           حفظ
         </button>
       </form>
@@ -288,7 +288,7 @@ function PartyModal({ caseId, p, onClose }: { caseId: string; p: Party | null; o
           <input name="lawyer_email" type="email" dir="ltr" defaultValue={p?.lawyer_email ?? ""} className={inputCls + " text-right"} />
         </Field>
         <div className="flex items-center gap-3 sm:col-span-2">
-          <button disabled={pending} className="rounded-lg bg-brand px-6 py-2 font-semibold text-white disabled:opacity-60">
+          <button disabled={pending} className="rounded-lg bg-ink hover:bg-ink-hover px-6 py-2 font-semibold text-white disabled:opacity-60">
             حفظ
           </button>
           <Msg res={res} />
@@ -320,7 +320,7 @@ function HearingsModal({ c, hearings, onClose }: { c: Case; hearings: Ev[]; onCl
         <input type="hidden" name="type" value="جلسة" />
         <input type="date" name="date" required className={inputCls} />
         <input name="note" placeholder="الغرض (مثل: لسداد الأمانة، لتقديم التقرير)" className={inputCls} />
-        <button disabled={pending} className="mt-1 rounded-lg bg-brand px-4 py-2 font-semibold text-white">
+        <button disabled={pending} className="mt-1 rounded-lg bg-ink hover:bg-ink-hover px-4 py-2 font-semibold text-white">
           إضافة جلسة
         </button>
         <div className="sm:col-span-3">
@@ -425,7 +425,7 @@ function EventModal({ caseId, e, onClose }: { caseId: string; e: Ev | null; onCl
           <input name="note" defaultValue={e?.note ?? ""} className={inputCls} />
         </Field>
         <div className="flex items-center gap-3 sm:col-span-2">
-          <button disabled={pending} className="rounded-lg bg-brand px-6 py-2 font-semibold text-white disabled:opacity-60">
+          <button disabled={pending} className="rounded-lg bg-ink hover:bg-ink-hover px-6 py-2 font-semibold text-white disabled:opacity-60">
             حفظ
           </button>
           <Msg res={res} />
@@ -482,7 +482,7 @@ function TeamPanel({ c, members, canWrite }: { c: Case; members: Member[]; canWr
                     key={m.user_id}
                     type="button"
                     onClick={() => toggle(arr as string[], set as (v: string[]) => void, m.user_id)}
-                    className={`rounded-full px-3 py-1 ${on ? "bg-brand text-white" : "border border-line"}`}
+                    className={`rounded-full px-3 py-1 ${on ? "bg-ink hover:bg-ink-hover text-white" : "border border-line"}`}
                   >
                     {m.display_name}
                   </button>
@@ -494,7 +494,7 @@ function TeamPanel({ c, members, canWrite }: { c: Case; members: Member[]; canWr
             <button
               disabled={pending}
               onClick={() => start(async () => { const r = await setTeam(c.id, selEx, selCo); setRes(r); if (r?.ok) setEdit(false); })}
-              className="rounded-lg bg-brand px-4 py-1.5 font-semibold text-white"
+              className="rounded-lg bg-ink hover:bg-ink-hover px-4 py-1.5 font-semibold text-white"
             >
               حفظ
             </button>
@@ -541,7 +541,7 @@ function NotesPanel({ c, notes, members, canWrite }: { c: Case; notes: Note[]; m
       {canWrite && (
         <form action={action} key={notes.length} className="mb-4 flex gap-2">
           <input name="body" placeholder="اكتب ملاحظة…" className="flex-1 rounded-lg border border-line px-3 py-2" />
-          <button disabled={pending} className="rounded-lg bg-brand px-4 font-semibold text-white">
+          <button disabled={pending} className="rounded-lg bg-ink hover:bg-ink-hover px-4 font-semibold text-white">
             إضافة
           </button>
         </form>

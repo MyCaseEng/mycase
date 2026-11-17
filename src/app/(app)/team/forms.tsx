@@ -22,7 +22,7 @@ export function InviteForm() {
           </option>
         ))}
       </select>
-      <button disabled={pending} className="rounded-lg bg-brand px-4 py-2 font-semibold text-white disabled:opacity-60">
+      <button disabled={pending} className="rounded-lg bg-ink hover:bg-ink-hover px-4 py-2 font-semibold text-white disabled:opacity-60">
         دعوة
       </button>
       {state && <p className={`text-sm sm:col-span-4 ${state.ok ? "text-green-700" : "text-red-700"}`}>{state.text}</p>}

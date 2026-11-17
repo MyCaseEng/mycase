@@ -102,7 +102,7 @@ function Review({ ex, path, existing, onReset }: { officeId: string; ex: Extract
       </div>
       <Msg res={res} />
       <div className="flex gap-3">
-        <button disabled={pending} className="rounded-lg bg-brand px-6 py-2.5 font-semibold text-white disabled:opacity-60">
+        <button disabled={pending} className="rounded-lg bg-ink hover:bg-ink-hover px-6 py-2.5 font-semibold text-white disabled:opacity-60">
           {pending ? "جارٍ الحفظ…" : "حفظ الدعوى"}
         </button>
         <button type="button" onClick={onReset} className="rounded-lg border border-line px-4 py-2">ملف آخر</button>

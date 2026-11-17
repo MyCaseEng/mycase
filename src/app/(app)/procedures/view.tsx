@@ -59,7 +59,7 @@ export default function ProcView({ c, letters, rows, options, canWrite }: P) {
               saveBlob(safeName(`إجراءات المأمورية ${c.case_no ?? ""}`) + ".docx", simpleDocx("إجراءات المأمورية", title, vis.map(procLine)));
               await logDoc(c.id, "صدّر إجراءات المأمورية (Word)", "");
             }}
-            className="rounded-lg bg-brand px-3 py-1.5 text-sm font-semibold text-white"
+            className="rounded-lg bg-ink hover:bg-ink-hover px-3 py-1.5 text-sm font-semibold text-white"
           >
             تصدير Word
           </button>
@@ -155,7 +155,7 @@ function EditProc({ c, x, onClose }: { c: Case; x: ProcLine | null; onClose: () 
         </label>
       )}
       <div className="mt-4 flex gap-2">
-        <button disabled={pending} onClick={save} className="rounded-lg bg-brand px-5 py-2 font-semibold text-white">حفظ</button>
+        <button disabled={pending} onClick={save} className="rounded-lg bg-ink hover:bg-ink-hover px-5 py-2 font-semibold text-white">حفظ</button>
         {x?.edited && (
           <button onClick={() => start(async () => { await setProcOverride(c.id, x.key, { body: null }); onClose(); })} className="rounded-lg border border-line px-4 py-2">
             إرجاع النص التلقائي

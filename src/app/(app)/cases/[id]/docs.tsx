@@ -92,12 +92,12 @@ export default function DocsPanel({ c, letters, refs, prefix, office, procRows, 
           </p>
           <div className="flex flex-col gap-2">
             {pick.ref && (
-              <button onClick={() => choose(pick, "use")} className="rounded-lg bg-brand px-4 py-2 font-semibold text-white">
+              <button onClick={() => choose(pick, "use")} className="rounded-lg bg-ink hover:bg-ink-hover px-4 py-2 font-semibold text-white">
                 إنشاء بالرقم {fmtRef(prefix, pick.ref)}
               </button>
             )}
             {canWrite && pick.category && (
-              <button onClick={() => choose(pick, "issue")} className={`rounded-lg px-4 py-2 font-semibold ${pick.ref ? "border border-line" : "bg-brand text-white"}`}>
+              <button onClick={() => choose(pick, "issue")} className={`rounded-lg px-4 py-2 font-semibold ${pick.ref ? "border border-line" : "bg-ink hover:bg-ink-hover text-white"}`}>
                 {pick.ref ? "إصدار رقم جديد ثم إنشاء" : `إصدار رقم (${regCode(pick.category)}) ثم إنشاء`}
               </button>
             )}
@@ -217,7 +217,7 @@ function LetterModal({ c, k, withRef, office, onClose }: { c: Case; k: LetterKey
       </div>
       {withRef && <p className="mt-2 text-xs text-muted">سيصدر رقم مرجعي ({L.cat} · {regCode(L.cat)}) عند الإنشاء.</p>}
       {err && <p className="mt-2 text-sm text-red-700">{err}</p>}
-      <button disabled={busy} onClick={create} className="mt-4 rounded-lg bg-brand px-6 py-2 font-semibold text-white disabled:opacity-60">
+      <button disabled={busy} onClick={create} className="mt-4 rounded-lg bg-ink hover:bg-ink-hover px-6 py-2 font-semibold text-white disabled:opacity-60">
         {busy ? "جارٍ الإنشاء…" : "إنشاء الكتاب (Word)"}
       </button>
     </Modal>

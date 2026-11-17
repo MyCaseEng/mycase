@@ -114,7 +114,7 @@ export default function LoginPage() {
           )}
           <button
             disabled={busy}
-            className="w-full rounded-lg bg-brand py-2.5 font-semibold text-white disabled:opacity-60"
+            className="w-full rounded-lg bg-ink hover:bg-ink-hover py-2.5 font-semibold text-white disabled:opacity-60"
           >
             {busy ? "لحظة…" : title}
           </button>

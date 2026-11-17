@@ -37,7 +37,7 @@ export default async function CasesPage() {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="flex-1 text-2xl font-bold">الدعاوى</h1>
         {ctx.role !== "viewer" && (
-          <Link href="/cases/new" className="rounded-lg bg-brand px-4 py-2 font-semibold text-white">
+          <Link href="/cases/new" className="rounded-lg bg-ink hover:bg-ink-hover px-4 py-2 font-semibold text-white">
             + دعوى جديدة
           </Link>
         )}

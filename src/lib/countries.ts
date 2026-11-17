@@ -31,38 +31,22 @@ export const validCountry = (code: unknown) => (COUNTRIES.some(([c]) => c === co
 // Flag images from flagcdn.com (free, all countries, sharp at any size).
 export const flagUrl = (code: string) => `https://flagcdn.com/${code.toLowerCase()}.svg`;
 
-// Platform colors per country. Not the raw flag colors (too loud for a professional tool): each is a deep,
-// muted take on the flag's main color, always paired with the same antique brass, the way Qatar's maroon is.
-// Three families: deep green, deep crimson, deep navy. All pass white-text contrast.
+// Platform colors per country. The look is calm and professional: white and grey surfaces, charcoal buttons,
+// and the country color only as a light touch (basmala, the active menu line, links, small badges).
+// Each country gets a deep, greyed take on its flag's main color; the antique brass is shared by all.
+const GREEN = "#2e5545";
+const CRIMSON = "#6e2e38";
+const NAVY = "#33495f";
 const BRASS = "#8f6d36";
-export const THEMES: Record<string, { brand: string; accent: string }> = {
-  QA: { brand: "#8a1538", accent: "#96713a" },
-  // deep greens
-  SA: { brand: "#165a3d", accent: BRASS },
-  AE: { brand: "#1e5b45", accent: BRASS },
-  KW: { brand: "#1d5a46", accent: BRASS },
-  JO: { brand: "#21563f", accent: BRASS },
-  PS: { brand: "#1f5841", accent: BRASS },
-  SY: { brand: "#1f5743", accent: BRASS },
-  SD: { brand: "#1d553d", accent: BRASS },
-  LY: { brand: "#1c5139", accent: BRASS },
-  DZ: { brand: "#195a3f", accent: BRASS },
-  MR: { brand: "#1b5a3c", accent: BRASS },
-  // deep crimsons
-  BH: { brand: "#8b1e2e", accent: BRASS },
-  OM: { brand: "#80202a", accent: BRASS },
-  EG: { brand: "#7f1d27", accent: BRASS },
-  IQ: { brand: "#7a1f28", accent: BRASS },
-  LB: { brand: "#7d2129", accent: BRASS },
-  YE: { brand: "#7b1e2a", accent: BRASS },
-  TN: { brand: "#8a1c26", accent: BRASS },
-  MA: { brand: "#7e1c22", accent: BRASS },
-  TR: { brand: "#861d26", accent: BRASS },
-  // deep navies
-  SO: { brand: "#244e78", accent: BRASS },
-  DJ: { brand: "#214a6c", accent: BRASS },
-  KM: { brand: "#234f77", accent: BRASS },
+const fam: Record<string, string> = {
+  QA: "#7a2840",
+  SA: GREEN, AE: GREEN, KW: GREEN, JO: GREEN, PS: GREEN, SY: GREEN, SD: GREEN, LY: GREEN, DZ: GREEN, MR: GREEN,
+  BH: CRIMSON, OM: CRIMSON, EG: CRIMSON, IQ: CRIMSON, LB: CRIMSON, YE: CRIMSON, TN: CRIMSON, MA: CRIMSON, TR: CRIMSON,
+  SO: NAVY, DJ: NAVY, KM: NAVY,
 };
+export const THEMES: Record<string, { brand: string; accent: string }> = Object.fromEntries(
+  Object.entries(fam).map(([c, brand]) => [c, { brand, accent: c === "QA" ? "#96713a" : BRASS }])
+);
 export const themeOf = (code?: string | null) => THEMES[validCountry(code)] ?? THEMES[DEFAULT_COUNTRY];
 // CSS variables for the office's pages (set on the app shell, so every page and dialog inside follows).
 export const themeVars = (code?: string | null) => {
@@ -70,7 +54,7 @@ export const themeVars = (code?: string | null) => {
   return {
     "--brand": t.brand,
     "--gold": t.accent,
-    "--brand-soft": `color-mix(in srgb, ${t.brand} 9%, white)`,
-    "--gold-soft": `color-mix(in srgb, ${t.accent} 14%, white)`,
+    "--brand-soft": `color-mix(in srgb, ${t.brand} 7%, white)`,
+    "--gold-soft": `color-mix(in srgb, ${t.accent} 11%, white)`,
   } as React.CSSProperties;
 };

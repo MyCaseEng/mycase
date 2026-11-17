@@ -79,7 +79,7 @@ export function UpdateFromPdf({ c, officeId }: { c: Case; officeId: string }) {
               <button
                 disabled={pending}
                 onClick={() => start(async () => { const r = await applyImportToCase(c.id, diff.patch, diff.parties, diff.sessions, c.source_file ? null : diff.path); setDone(r?.text ?? ""); setOpen(false); setDiff(null); })}
-                className="rounded-lg bg-brand px-5 py-2 font-semibold text-white"
+                className="rounded-lg bg-ink hover:bg-ink-hover px-5 py-2 font-semibold text-white"
               >
                 تطبيق على الدعوى
               </button>

@@ -56,7 +56,7 @@ export default function RefsView({ rows, cases, canWrite }: { rows: RefRow[]; ca
             ))}
           </select>
           <input name="title" placeholder="وصف المستند" className="min-w-48 flex-1 rounded-lg border border-line px-3 py-2 text-sm" />
-          <button disabled={pending} className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white">
+          <button disabled={pending} className="rounded-lg bg-ink hover:bg-ink-hover px-4 py-2 text-sm font-semibold text-white">
             إصدار
           </button>
           {res && <span className={`w-full text-sm ${res.ok ? "font-semibold text-green-700" : "text-red-700"}`}>{res.text}</span>}

@@ -81,7 +81,7 @@ export default async function SettingsPage() {
           <input name="address" defaultValue={office?.address ?? ""} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 disabled:bg-background" />
         </label>
         {isAdmin ? (
-          <button className="rounded-lg bg-brand px-5 py-2 font-semibold text-white">حفظ</button>
+          <button className="rounded-lg bg-ink hover:bg-ink-hover px-5 py-2 font-semibold text-white">حفظ</button>
         ) : (
           <p className="text-sm text-muted">يعدّل هذه البيانات مدير المكتب.</p>
         )}
@@ -107,7 +107,7 @@ export default async function SettingsPage() {
             </div>
           ))}
         </div>
-        {isAdmin && <button className="rounded-lg bg-brand px-5 py-2 font-semibold text-white">حفظ</button>}
+        {isAdmin && <button className="rounded-lg bg-ink hover:bg-ink-hover px-5 py-2 font-semibold text-white">حفظ</button>}
       </form>
       <section className="space-y-3 rounded-xl border border-line bg-white p-5">
         <h2 className="font-semibold">قوالب Word</h2>

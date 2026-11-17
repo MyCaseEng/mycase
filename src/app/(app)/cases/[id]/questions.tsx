@@ -80,7 +80,7 @@ function LetterRow({ c, l, partyName, partyRole, refText, canWrite, onEdit, onMa
       : l.sent_at
         ? left != null && left < 0 ? `انتهت المهلة منذ ${-left} يوم` : "بانتظار الرد"
         : "لم يُرسل بعد";
-  const b = (on: boolean) => `rounded-lg px-3 py-1.5 text-sm font-semibold ${on ? "bg-brand text-white" : "border border-line hover:bg-background"}`;
+  const b = (on: boolean) => `rounded-lg px-3 py-1.5 text-sm font-semibold ${on ? "bg-ink hover:bg-ink-hover text-white" : "border border-line hover:bg-background"}`;
   return (
     <div className="@container rounded-xl border border-line p-3">
       <div className="grid items-center gap-3 @3xl:grid-cols-[1.4fr_1fr_1fr_auto]">
@@ -169,7 +169,7 @@ function SetupModal({ c, settings, onClose }: { c: Case; settings: CaseSettings;
         </label>
         <p className="text-xs text-muted">بعد الإعداد: 📄 لتنزيل الخطاب Word، و✉ لتنزيل مسودة Outlook مع الخطاب مرفقاً.</p>
         <Msg res={res} />
-        <button disabled={pending} className="rounded-lg bg-brand px-6 py-2 font-semibold text-white disabled:opacity-60">
+        <button disabled={pending} className="rounded-lg bg-ink hover:bg-ink-hover px-6 py-2 font-semibold text-white disabled:opacity-60">
           {pending ? "جارٍ الإعداد…" : "إعداد الخطابات"}
         </button>
       </form>
@@ -204,7 +204,7 @@ function EditModal({ c, l, partyName, hasRef, onClose }: { c: Case; l: QLetter; 
         </Field>
         <Msg res={res} />
         <div className="flex flex-wrap items-center gap-3">
-          <button disabled={pending} className="rounded-lg bg-brand px-6 py-2 font-semibold text-white disabled:opacity-60">
+          <button disabled={pending} className="rounded-lg bg-ink hover:bg-ink-hover px-6 py-2 font-semibold text-white disabled:opacity-60">
             حفظ
           </button>
           {!hasRef && (
@@ -288,7 +288,7 @@ function MailModal({ c, l, refText, office, onClose }: { c: Case; l: QLetter; re
       </label>
       {err && <p className="mt-2 text-sm text-red-700">{err}</p>}
       <div className="mt-4 flex flex-wrap gap-2">
-        <button disabled={busy} onClick={download} className="rounded-lg bg-brand px-5 py-2 font-semibold text-white disabled:opacity-60">
+        <button disabled={busy} onClick={download} className="rounded-lg bg-ink hover:bg-ink-hover px-5 py-2 font-semibold text-white disabled:opacity-60">
           تنزيل مسودة Outlook مع المرفق
         </button>
         <button onClick={() => navigator.clipboard.writeText(subject + "\n\n" + body)} className="rounded-lg border border-line px-4 py-2">
