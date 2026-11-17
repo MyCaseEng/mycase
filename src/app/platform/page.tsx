@@ -3,6 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { BRAND } from "@/lib/brand";
+import { OfficeActions, TicketReply } from "./controls";
+import { KIND_LABEL } from "@/components/support";
 import { createClient } from "@/lib/supabase/server";
 import { countryName, flagUrl } from "@/lib/countries";
 import { SpecialtyIcon, specialtyOf } from "@/lib/specialties";
@@ -52,8 +54,11 @@ async function Platform() {
   const { data: owner } = await supabase.rpc("is_platform_admin");
   if (!owner) notFound();
   const { data: mine } = await supabase.from("members").select("office_id").eq("user_id", cl.claims.sub).eq("is_active", true).limit(1);
-  const { data, error } = await supabase.rpc("platform_offices");
+  const [{ data, error }, { data: tk }] = await Promise.all([supabase.rpc("platform_offices"), supabase.rpc("platform_tickets")]);
   if (error) throw new Error(error.message);
+  type T = { id: string; office_name: string | null; user_name: string | null; user_email: string | null; kind: string; subject: string; body: string; page: string | null; status: string; reply: string | null; replied_at: string | null; created_at: string };
+  const tickets = (tk ?? []) as T[];
+  const openTickets = tickets.filter((x) => x.status === "open");
   const rows = (data ?? []) as Row[];
   const t = todayStr();
   const day = (iso: string | null) => (iso ? iso.slice(0, 10) : null);
@@ -72,6 +77,7 @@ async function Platform() {
     [rows.reduce((n, r) => n + r.members, 0), "مستخدم"],
     [rows.reduce((n, r) => n + r.cases, 0), "دعوى في المنصة"],
     [rows.reduce((n, r) => n + r.imports, 0), "قراءة PDF بالذكاء الاصطناعي"],
+    [openTickets.length, "رسالة دعم بانتظار الرد"],
   ];
   const byCountry = Object.entries(
     rows.reduce<Record<string, number>>((m, r) => ((m[r.country] = (m[r.country] ?? 0) + 1), m), {})
@@ -105,7 +111,7 @@ async function Platform() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
         {tiles.map(([n, l]) => (
           <div key={l} className="rounded-xl border border-line bg-white p-4">
             <div className="font-display text-2xl font-bold">{n}</div>
@@ -130,7 +136,7 @@ async function Platform() {
         <table className="w-full text-sm">
           <thead className="bg-background text-right text-xs text-muted">
             <tr>
-              {["المكتب", "الدولة", "التخصص", "المدير", "تاريخ الإنشاء", "الأعضاء", "الدعاوى (المفتوحة)", "قراءات PDF", "آخر نشاط", "آخر دخول"].map((h) => (
+              {["المكتب", "الدولة", "التخصص", "المدير", "تاريخ الإنشاء", "الأعضاء", "الدعاوى (المفتوحة)", "قراءات PDF", "آخر نشاط", "آخر دخول", ""].map((h) => (
                 <th key={h} className="whitespace-nowrap px-3 py-2.5 font-medium">
                   {h}
                 </th>
@@ -139,7 +145,7 @@ async function Platform() {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} className="border-t border-line align-top">
+              <tr key={r.id} className={`border-t border-line align-top ${r.is_active ? "" : "bg-red-50/50"}`}>
                 <td className="px-3 py-2.5">
                   <b>{r.name}</b>
                   {r.expert_name && <div className="text-xs text-muted">{r.expert_name}</div>}
@@ -176,11 +182,14 @@ async function Platform() {
                 <td className="px-3 py-2.5 tabular-nums">{r.imports}</td>
                 <td className="whitespace-nowrap px-3 py-2.5">{ago(r.last_activity)}</td>
                 <td className="whitespace-nowrap px-3 py-2.5">{ago(r.last_sign_in)}</td>
+                <td className="px-3 py-2.5">
+                  <OfficeActions id={r.id} name={r.name} active={r.is_active} />
+                </td>
               </tr>
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={10} className="px-3 py-6 text-center text-muted">
+                <td colSpan={11} className="px-3 py-6 text-center text-muted">
                   لا توجد مكاتب بعد.
                 </td>
               </tr>
@@ -188,6 +197,36 @@ async function Platform() {
           </tbody>
         </table>
       </div>
+
+      {/* support messages from the offices */}
+      <section id="support" className="space-y-3">
+        <h2 className="flex items-baseline gap-2 text-lg font-bold">
+          رسائل الدعم
+          <span className={`text-sm font-normal ${openTickets.length ? "text-amber-700" : "text-muted"}`}>
+            {openTickets.length ? `${openTickets.length} بانتظار الرد` : "لا رسائل مفتوحة"}
+          </span>
+        </h2>
+        {tickets.map((x) => (
+          <div key={x.id} className={`rounded-xl border bg-white p-4 text-sm ${x.status === "open" ? "border-amber-300" : "border-line"}`}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-background px-2 text-xs">{KIND_LABEL[x.kind] ?? x.kind}</span>
+              <b className="flex-1">{x.subject}</b>
+              <span className="text-xs text-muted">{fmtD(day(x.created_at)!)}</span>
+            </div>
+            <div className="mt-1 text-xs text-muted">
+              {x.office_name ?? "مكتب محذوف"} · {x.user_name ?? "—"}
+              {x.user_email && (
+                <a href={`mailto:${x.user_email}`} dir="ltr" className="ms-1 hover:text-brand">
+                  {x.user_email}
+                </a>
+              )}
+              {x.page && <span> · من صفحة {x.page}</span>}
+            </div>
+            <p className="mt-2 whitespace-pre-line leading-7">{x.body}</p>
+            <TicketReply id={x.id} reply={x.reply} status={x.status} />
+          </div>
+        ))}
+      </section>
     </div>
       </main>
     </div>

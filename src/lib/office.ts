@@ -37,6 +37,8 @@ export const getCtx = cache(async (): Promise<Ctx> => {
     await supabase.rpc("accept_invitations");
     ({ data: m } = await findMember());
   }
+  // a member whose office was suspended by the platform owner still sees their membership, but not the office
+  if (m && !m.offices) redirect("/suspended");
   if (!m) {
     // the platform owner may have no office of their own: send them to the platform dashboard
     const { data: owner } = await supabase.rpc("is_platform_admin");

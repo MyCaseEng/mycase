@@ -3,6 +3,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Nav from "./nav";
 import { BRAND } from "@/lib/brand";
+import SupportButton from "@/components/support";
 
 // Wide screens: letterhead, then a top bar with the pages laid out horizontally (it stays on screen when scrolling).
 // Narrower screens: the same bar with a ☰ button that opens the pages as a side menu.
@@ -47,7 +48,8 @@ export default function Shell({
           <div className="hidden min-w-0 flex-1 justify-center xl:flex">
             <Nav horizontal owner={owner} />
           </div>
-          <div className="ms-auto flex items-center gap-3 xl:ms-0">
+          <div className="ms-auto flex items-center gap-2 xl:ms-0">
+            <SupportButton />
             {bell}
             <div className="hidden text-left text-xs leading-tight sm:block">
               <div className="font-semibold text-foreground">{user.name}</div>
