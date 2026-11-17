@@ -43,10 +43,22 @@ export function SnoozeModal({ a, onClose }: { a: Alert; onClose: () => void }) {
   );
 }
 
-export function AlertLine({ a, href, onNavigate, canWrite = true }: { a: Alert; href: string; onNavigate?: () => void; canWrite?: boolean }) {
+export function AlertLine({
+  a,
+  href,
+  onNavigate,
+  canWrite = true,
+  plain,
+}: {
+  a: Alert;
+  href: string;
+  onNavigate?: () => void;
+  canWrite?: boolean;
+  plain?: boolean; // a quiet row (white, only the dot is colored) for lists grouped under their case
+}) {
   const [snz, setSnz] = useState(false);
   return (
-    <div className={`flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm ${ROW[a.level]}`}>
+    <div className={`flex flex-wrap items-center gap-2 text-sm ${plain ? "py-1.5" : `rounded-lg border px-3 py-2 ${ROW[a.level]}`}`}>
       <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${DOT[a.level]}`} />
       <span className="min-w-40 flex-1">{a.text}</span>
       <Link href={href + (ANCHOR[a.act] ?? "")} onClick={onNavigate} className="rounded-md border border-line bg-white px-2 py-0.5 text-xs hover:border-brand">

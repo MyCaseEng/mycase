@@ -37,7 +37,7 @@ export default function Shell({
     <div className="flex min-h-dvh flex-col" style={theme}>
       {letterhead}
       <header className="sticky top-0 z-30 border-b border-line bg-white">
-        <div className="flex items-center gap-4 px-4 lg:px-6">
+        <div className="mx-auto flex max-w-[1560px] items-center gap-4 px-4 lg:px-8">
           <button onClick={() => setOpen(true)} aria-label="القائمة" className="my-2 rounded-lg border border-line px-2.5 py-1 text-lg lg:hidden">
             ☰
           </button>
@@ -72,7 +72,10 @@ export default function Shell({
           </aside>
         </div>
       )}
-      <main className="flex-1 p-4 md:p-8">{children}</main>
+      <main className="flex-1 px-4 py-5 md:px-8 md:py-8">
+        {/* one content width for every page, lined up with the top bar */}
+        <div className="mx-auto w-full max-w-[1500px]">{children}</div>
+      </main>
     </div>
   );
 }

@@ -28,7 +28,7 @@ export default function CaseView({ officeId, c, members, notes, letters, alerts,
   const [qSetup, setQSetup] = useState(false);
   const delivered = !!c.report_date;
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto max-w-6xl space-y-5">
       <Link href="/cases" className="text-sm text-muted hover:text-brand">
         → الدعاوى
       </Link>

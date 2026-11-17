@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getCtx } from "@/lib/office";
-import { loadBoard, caseLabel, sideOf, isDelivered } from "@/lib/cases";
-import { caseAlerts, caseStage, STAGES, LEVEL_ORDER, type Stage } from "@/lib/alerts";
+import { loadBoard, caseLabel, sideOf, isDelivered, type Case } from "@/lib/cases";
+import { caseAlerts, caseStage, STAGES, LEVEL_ORDER, type Stage, type Alert } from "@/lib/alerts";
 import { fmtD, inDays, dayDiff, todayStr, normCaseNo } from "@/lib/format";
 import { AlertLine, DOT } from "@/components/alerts-ui";
 
@@ -33,6 +33,14 @@ export default async function Home() {
     .filter((x) => x.a.level !== "calm")
     .sort((x, y) => LEVEL_ORDER[x.a.level] - LEVEL_ORDER[y.a.level]);
 
+  // alerts grouped under their case, worst case first
+  const byCase = new Map<string, { c: (typeof active)[number]; list: typeof alerts }>();
+  alerts.forEach((x) => {
+    if (!byCase.has(x.c.id)) byCase.set(x.c.id, { c: x.c, list: [] });
+    byCase.get(x.c.id)!.list.push(x);
+  });
+  const alertGroups = [...byCase.values()];
+
   const stages = new Map<Stage, typeof active>(STAGES.map(([k]) => [k, []]));
   active.forEach((c) => stages.get(caseStage(c, lettersOf(c.id)))!.push(c));
 
@@ -45,7 +53,7 @@ export default async function Home() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">مرحباً {ctx.displayName}</h1>
         <p className="text-muted">
@@ -53,6 +61,8 @@ export default async function Home() {
         </p>
       </div>
 
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="min-w-0 space-y-6">
       {/* hero: the next meeting or inspection */}
       <section className="grid gap-4 rounded-2xl border border-line border-s-4 border-s-brand bg-white p-5 md:grid-cols-[1.3fr_1fr]">
         <div>
@@ -90,39 +100,55 @@ export default async function Home() {
         </div>
       </section>
 
-      {alerts.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="font-semibold">يحتاج انتباهك</h2>
-          {alerts.slice(0, 8).map(({ a, c }) => (
-            <div key={c.id + a.key}>
-              <div className="mb-0.5 text-xs text-muted">{label(c)}</div>
-              <AlertLine a={a} href={`/cases/${c.id}`} canWrite={ctx.role !== "viewer"} />
-            </div>
-          ))}
-          {alerts.length > 8 && <p className="text-sm text-muted">و{alerts.length - 8} تنبيهات أخرى في الجرس 🔔</p>}
+      {alertGroups.length > 0 && (
+        <section className="rounded-2xl border border-line bg-white p-4">
+          <h2 className="mb-2 flex items-baseline gap-2 font-semibold">
+            يحتاج انتباهك <span className="text-sm font-normal text-muted">({alerts.length})</span>
+          </h2>
+          <AlertGroups groups={alertGroups.slice(0, 5)} label={label} canWrite={ctx.role !== "viewer"} />
+          {alertGroups.length > 5 && (
+            <details className="group">
+              <summary className="cursor-pointer list-none pt-2 text-sm font-semibold text-brand hover:underline">
+                <span className="group-open:hidden">عرض الكل ({alertGroups.length - 5} دعاوى أخرى)</span>
+                <span className="hidden group-open:inline">إخفاء</span>
+              </summary>
+              <AlertGroups groups={alertGroups.slice(5)} label={label} canWrite={ctx.role !== "viewer"} />
+            </details>
+          )}
         </section>
       )}
+      </div>
 
-      {/* 14-day calendar */}
-      <section className="rounded-2xl border border-line bg-white p-4">
+      {/* next 14 days as an agenda (only days that have something) */}
+      <aside className="rounded-2xl border border-line bg-white p-4 xl:sticky xl:top-20">
         <h2 className="mb-3 font-semibold">الأيام الـ14 القادمة</h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-          {days.map(({ d, items }) => (
-            <div key={d} className={`min-h-24 rounded-xl border p-2 ${d === t ? "border-brand bg-brand-soft/50" : "border-line"} ${["الجمعة", "السبت"].includes(wd(d)) ? "opacity-60" : ""}`}>
-              <div className="text-xs font-semibold">{wd(d)}</div>
-              <div className="mb-1 text-xs text-muted">{fmtD(d).slice(5)}</div>
-              <div className="space-y-1">
-                {items.map(({ c, e }) => (
-                  <Link key={e.id} href={`/cases/${c.id}`} title={label(c)} className={`block truncate rounded-md px-1.5 py-0.5 text-[11px] ${TYPE_TONE[e.type]}`}>
-                    {e.time ? e.time.slice(0, 5) + " " : ""}
-                    {e.type}: {sideOf(c, 1)[0]?.name ?? label(c)}
-                  </Link>
-                ))}
+        {days.every((x) => !x.items.length) && <p className="text-sm text-muted">لا مواعيد خلال الأسبوعين القادمين.</p>}
+        <div className="space-y-3">
+          {days
+            .filter((x) => x.items.length)
+            .map(({ d, items }) => (
+              <div key={d}>
+                <div className={`mb-1 text-xs font-semibold ${d === t ? "text-brand" : "text-muted"}`}>
+                  {d === t ? "اليوم · " : ""}
+                  {wd(d)} {fmtD(d)}
+                </div>
+                <div className="space-y-1">
+                  {items.map(({ c, e }) => (
+                    <Link key={e.id} href={`/cases/${c.id}`} className="flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-background">
+                      <span className={`mt-0.5 shrink-0 rounded-md px-1.5 text-[11px] ${TYPE_TONE[e.type] ?? "bg-background"}`}>{e.type}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{sideOf(c, 1)[0]?.name ?? label(c)}</span>
+                        <span className="block truncate text-xs text-muted">{label(c)}</span>
+                      </span>
+                      {e.time && <span className="shrink-0 text-xs tabular-nums text-muted">{e.time.slice(0, 5)}</span>}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
-      </section>
+      </aside>
+      </div>
 
       {/* kanban: where each active case stands */}
       <section>
@@ -159,6 +185,25 @@ export default async function Home() {
           })}
         </div>
       </section>
+    </div>
+  );
+}
+
+function AlertGroups({ groups, label, canWrite }: { groups: { c: Case; list: { a: Alert }[] }[]; label: (c: Case) => string; canWrite: boolean }) {
+  return (
+    <div className="divide-y divide-line">
+      {groups.map(({ c, list }) => (
+        <div key={c.id} className="py-2.5">
+          <Link href={`/cases/${c.id}`} className="text-sm font-semibold hover:text-brand">
+            {label(c)}
+          </Link>
+          <div className="ps-1">
+            {list.map(({ a }) => (
+              <AlertLine key={a.key} a={a} href={`/cases/${c.id}`} canWrite={canWrite} plain />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
