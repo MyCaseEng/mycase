@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import type { Case, QLetter } from "@/lib/cases";
-import { refText, type Ref } from "@/lib/refs";
+import { refText, showRef, type Ref } from "@/lib/refs";
 import { caseDocs, LETTERS, sideLabel, type DocItem, type LetterKey, type OfficeInfo, type ProcRow } from "@/lib/docs";
 import { saveBlob, safeName } from "@/lib/docx";
 import { courtForm, documentsForm, minutesForm, questionsForm, reportForm, startForm, type Filled } from "@/lib/forms";
@@ -73,7 +73,7 @@ export default function DocsPanel({ c, letters, refs, prefix, office, procRows, 
           >
             <div className="text-sm font-semibold">{d.label}</div>
             <div className="text-xs text-muted">{d.sub}</div>
-            {d.ref && <div className="mt-1 text-xs text-brand" dir="ltr" style={{ textAlign: "right" }}>{refText(d.ref, prefix)}</div>}
+            {d.ref && <div className="mt-1 text-xs text-brand">{showRef(refText(d.ref, prefix))}</div>}
           </button>
         ))}
       </div>
@@ -84,7 +84,7 @@ export default function DocsPanel({ c, letters, refs, prefix, office, procRows, 
           <p className="mb-2 text-sm text-muted">{caseRef(c)} · {pick.sub}</p>
           <p className="mb-4 text-sm">
             {pick.ref ? (
-              <>صدر لهذا المستند الرقم <b dir="ltr">{refText(pick.ref, prefix)}</b>.</>
+              <>صدر لهذا المستند الرقم <b>{showRef(refText(pick.ref, prefix))}</b>.</>
             ) : (
               "لم يصدر رقم مرجعي لهذا المستند بعد."
             )}
@@ -92,7 +92,7 @@ export default function DocsPanel({ c, letters, refs, prefix, office, procRows, 
           <div className="flex flex-col gap-2">
             {pick.ref && (
               <button onClick={() => choose(pick, "use")} className="rounded-lg bg-ink hover:bg-ink-hover px-4 py-2 font-semibold text-white">
-                إنشاء بالرقم {refText(pick.ref, prefix)}
+                إنشاء بالرقم {showRef(refText(pick.ref, prefix))}
               </button>
             )}
             {canWrite && pick.category && (

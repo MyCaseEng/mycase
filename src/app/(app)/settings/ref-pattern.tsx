@@ -1,7 +1,7 @@
 "use client";
 // The office's reference-number pattern: tokens in any order with any separators, with a live example.
 import { useRef, useState } from "react";
-import { DEFAULT_PATTERN, REF_TOKENS, formatRef } from "@/lib/refs";
+import { DEFAULT_PATTERN, REF_TOKENS, formatRef, showRef } from "@/lib/refs";
 
 export default function RefPatternField({ initial, reg, disabled }: { initial: string; reg: string; disabled: boolean }) {
   const [v, setV] = useState(initial || DEFAULT_PATTERN);
@@ -18,7 +18,7 @@ export default function RefPatternField({ initial, reg, disabled }: { initial: s
   return (
     <div className="space-y-2">
       <span className="text-sm text-muted">صيغة الرقم المرجعي لمكتبك</span>
-      <input ref={box} name="refPattern" dir="ltr" value={v} onChange={(e) => setV(e.target.value)} disabled={disabled} className="w-full rounded-lg border border-line px-3 py-2 text-right font-mono disabled:bg-background" />
+      <input ref={box} name="refPattern" dir="rtl" value={v} onChange={(e) => setV(e.target.value)} disabled={disabled} className="w-full rounded-lg border border-line px-3 py-2 font-mono disabled:bg-background" />
       {!disabled && (
         <div className="flex flex-wrap gap-1.5">
           {REF_TOKENS.map(([t, l]) => (
@@ -33,9 +33,8 @@ export default function RefPatternField({ initial, reg, disabled }: { initial: s
       )}
       <div className="rounded-lg bg-background px-3 py-2 text-sm">
         مثال:{" "}
-        <b dir="ltr" className="inline-block">
-          {formatRef(v, { reg: reg || "1234", cat: "محضر اجتماع", seq: 2, year, caseNo: "888 - 2026" })}
-        </b>
+        <b>{showRef(formatRef(v, { reg: reg || "1234", cat: "محضر اجتماع", seq: 2, year, caseNo: "888 - 2026" }))}</b>
+        <span className="ms-2 text-xs text-muted">(محضر اجتماع، المستند الثاني في السنة)</span>
         {!reg && <span className="ms-2 text-xs text-muted">(رقم القيد في المثال افتراضي، أدخل رقمك في بيانات المكتب)</span>}
       </div>
       {!ok && <p className="text-xs text-red-700">يجب أن تحتوي الصيغة على التسلسل {"{تسلسل}"}.</p>}

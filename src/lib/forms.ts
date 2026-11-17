@@ -6,6 +6,7 @@ import { DOTS } from "@/lib/docx";
 import { caseRef, fmtD, normRole, todayStr } from "@/lib/format";
 import { countryName, currencyOf, themeOf } from "@/lib/countries";
 import { signLine, specialtyOf } from "@/lib/specialties";
+import { showRef } from "@/lib/refs";
 
 export const FORM_KINDS: [kind: string, label: string][] = [
   ["start", "إخطار الأطراف باستلام التكليف وبدء المأمورية"],
@@ -34,8 +35,8 @@ export function common(c: Case, office: OfficeInfo, ref = "", date = todayStr())
     LH_LINE3: [office.address, countryName(office.country), office.phone, office.email].filter(Boolean).join(" — "),
     SIGN: signLine(office.specialty, office.expertName),
     DATE: fmtD(date),
-    // the reference reads left-to-right like on screen (م ع/007/س أ/26): wrapped in LRE…PDF marks
-    REF: ref ? `\u202A${ref}\u202C` : "……………",
+    // read from the right: registration no / code / sequence / year (year last)
+    REF: ref ? showRef(ref) : "……………",
     CASE_NO: caseRef(c) || D,
     AUTH: c.authority || "الجهة المنتدِبة",
     P1: sideLine(c, 1) || D,

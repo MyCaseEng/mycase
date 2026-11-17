@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { REG_CATS } from "@/lib/refs";
+import { REG_CATS, showRef } from "@/lib/refs";
 import { fmtD } from "@/lib/format";
 import Confirm2 from "@/components/confirm2";
 import { issueFromForm, setRefStatus, type IssueRes } from "./actions";
@@ -94,8 +94,8 @@ export default function RefsView({ rows, cases, canWrite }: { rows: RefRow[]; ca
           <tbody>
             {list.map((r) => (
               <tr key={r.id} className={`border-t border-line ${r.cancelled ? "text-muted" : ""}`}>
-                <td className={`px-3 py-2 font-semibold ${r.cancelled ? "line-through" : ""}`} dir="ltr" style={{ textAlign: "right" }}>
-                  {r.ref}
+                <td className={`px-3 py-2 font-semibold ${r.cancelled ? "line-through" : ""}`}>
+                  {showRef(r.ref)}
                 </td>
                 <td className="px-3 py-2">
                   {r.title || r.category}

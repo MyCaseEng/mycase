@@ -2,7 +2,7 @@
 import { useActionState, useState, useTransition } from "react";
 import type { Case, QLetter } from "@/lib/cases";
 import type { Ref } from "@/lib/refs";
-import { refText as refLabel } from "@/lib/refs";
+import { refText as refLabel, showRef } from "@/lib/refs";
 import { fmtD, dayDiff, todayStr, normRole } from "@/lib/format";
 import { Field, Modal, Msg, inputCls } from "@/components/ui";
 import Confirm2 from "@/components/confirm2";
@@ -90,7 +90,7 @@ function LetterRow({ c, l, partyName, partyRole, refText, canWrite, onEdit, onMa
         </div>
         <div className="text-sm">
           <div className="text-xs text-muted">أسئلة واستفسارات</div>
-          {fmtD(l.letter_date)} {refText && <span className="text-xs text-muted" dir="ltr">· {refText}</span>}
+          {fmtD(l.letter_date)} {refText && <span className="text-xs text-muted">· {showRef(refText)}</span>}
         </div>
         <div className={`text-sm ${tone}`}>
           <div className="text-xs font-normal text-muted">مهلة الرد</div>

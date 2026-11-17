@@ -1,21 +1,21 @@
 // Reference-number categories and format, ported from the prototype.
 // A number looks like "م ع/007/س أ/26": office prefix / sequence / category code / two-digit year.
 
-// Platform-wide document types for the reference register (neutral; the same for every office).
+// Platform-wide document types and their letter codes, used in the reference number (neutral; the same for every office).
 export const REG_CATS: [string, string][] = [
-  ["إخطار بدء المأمورية", ""],
-  ["أسئلة واستفسارات", ""],
-  ["محضر اجتماع", ""],
-  ["محضر معاينة", ""],
-  ["طلب تأجيل", ""],
-  ["طلب إعادة تقدير الأمانة", ""],
-  ["طلب تأجيل وإعادة تقدير الأمانة", ""],
-  ["محضر استلام مستندات", ""],
-  ["محضر تسليم مستندات", ""],
-  ["تقرير خبرة", ""],
-  ["تقرير تكميلي", ""],
-  ["كتاب", ""],
-  ["أخرى", ""],
+  ["إخطار بدء المأمورية", "إخ"],
+  ["أسئلة واستفسارات", "أس"],
+  ["محضر اجتماع", "اج"],
+  ["محضر معاينة", "مع"],
+  ["طلب تأجيل", "تأ"],
+  ["طلب إعادة تقدير الأمانة", "أم"],
+  ["طلب تأجيل وإعادة تقدير الأمانة", "تأم"],
+  ["محضر استلام مستندات", "اس"],
+  ["محضر تسليم مستندات", "تس"],
+  ["تقرير خبرة", "تق"],
+  ["تقرير تكميلي", "تك"],
+  ["كتاب", "كت"],
+  ["أخرى", "أخ"],
 ];
 export const regCode = (cat: string) => REG_CATS.find((c) => c[0] === cat)?.[1] ?? "";
 export const DEFAULT_PREFIX = "م ع";
@@ -29,7 +29,7 @@ export const refText = (r: { ref_text?: string | null; seq: number; category: st
 export const DEFAULT_PATTERN = "{قيد}/{نوع}/{تسلسل}/{سنة}";
 export const REF_TOKENS: [token: string, label: string][] = [
   ["{قيد}", "رقم قيد الخبير"],
-  ["{نوع}", "نوع المستند"],
+  ["{نوع}", "رمز المستند (اج، مع…)"],
   ["{تسلسل}", "التسلسل (001)"],
   ["{سنة}", "السنة (2026)"],
   ["{سنة2}", "السنة مختصرة (26)"],
@@ -38,7 +38,7 @@ export const REF_TOKENS: [token: string, label: string][] = [
 // the same formatting as the database's format_ref(), for the live preview in settings
 export function formatRef(pattern: string, v: { reg?: string; cat: string; seq: number; year: number; caseNo?: string }) {
   let t = (pattern || DEFAULT_PATTERN).trim();
-  t = t.split("{قيد}").join((v.reg ?? "").trim()).split("{نوع}").join(v.cat).split("{تسلسل}").join(String(v.seq).padStart(3, "0"));
+  t = t.split("{قيد}").join((v.reg ?? "").trim()).split("{نوع}").join(regCode(v.cat) || v.cat).split("{تسلسل}").join(String(v.seq).padStart(3, "0"));
   t = t.split("{سنة2}").join(String(v.year).slice(-2)).split("{سنة}").join(String(v.year)).split("{رقم_الدعوى}").join((v.caseNo ?? "").trim());
   return t.replace(/([/\-_.])\s*(\1\s*)+/g, "$1").replace(/^\s*[/\-_.]\s*|\s*[/\-_.]\s*$/g, "").trim();
 }
@@ -71,3 +71,7 @@ export const QTPL_DEFAULT: Record<string, string[]> = {
     "هل لديكم أية أقوال أو مستندات تودون إضافتها؟",
   ],
 };
+
+// For display in Arabic (right-to-left) text: each part keeps its place, so reading from the right gives
+// registration no / code / sequence / year, with the year last. Without the marks, «002/2026» would join into one run.
+export const showRef = (t: string) => t.replace(/\s*([/\-_.])\s*/g, "\u200F$1\u200F");

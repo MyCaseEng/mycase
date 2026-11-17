@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useTransition } from "react";
 import type { Case, Member } from "@/lib/cases";
-import { REG_CATS, refText, type Ref } from "@/lib/refs";
+import { REG_CATS, refText, showRef, type Ref } from "@/lib/refs";
 import { fmtD } from "@/lib/format";
 import Confirm2 from "@/components/confirm2";
 import { issueFromForm, setRefStatus, type IssueRes } from "../../refs/actions";
@@ -33,7 +33,7 @@ export default function ArchivePanel({ c, refs, members, prefix, canWrite }: { c
             <tbody>
               {refs.map((r) => (
                 <tr key={r.id} className={`border-t border-line ${r.status === "ملغى" ? "text-muted line-through" : ""}`}>
-                  <td className="py-2 font-semibold" dir="ltr" style={{ textAlign: "right" }}>{refText(r, prefix)}</td>
+                  <td className="py-2 font-semibold">{showRef(refText(r, prefix))}</td>
                   <td className="py-2">{r.title || r.category}</td>
                   <td className="py-2">{fmtD(r.issued_at)}</td>
                   <td className="py-2 text-muted">{nm(r.issued_by)}</td>
