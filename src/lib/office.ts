@@ -37,7 +37,11 @@ export const getCtx = cache(async (): Promise<Ctx> => {
     await supabase.rpc("accept_invitations");
     ({ data: m } = await findMember());
   }
-  if (!m) redirect("/welcome");
+  if (!m) {
+    // the platform owner may have no office of their own: send them to the platform dashboard
+    const { data: owner } = await supabase.rpc("is_platform_admin");
+    redirect(owner ? "/platform" : "/welcome");
+  }
   const office = m.offices as unknown as { name: string } | null;
   return {
     userId,

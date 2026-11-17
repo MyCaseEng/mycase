@@ -39,6 +39,9 @@ async function Welcome() {
   if (!u.user) redirect("/login");
   const { data: joined } = await supabase.rpc("accept_invitations");
   if (joined && joined > 0) redirect("/");
+  // the platform owner never has to create an office
+  const { data: owner } = await supabase.rpc("is_platform_admin");
+  if (owner) redirect("/platform");
 
   return (
     <main className="flex flex-1 items-center justify-center p-6">

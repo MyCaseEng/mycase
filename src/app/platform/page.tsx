@@ -1,5 +1,8 @@
-import { notFound } from "next/navigation";
-import { getCtx } from "@/lib/office";
+import { Suspense } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { notFound, redirect } from "next/navigation";
+import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/server";
 import { countryName, flagUrl } from "@/lib/countries";
 import { SpecialtyIcon, specialtyOf } from "@/lib/specialties";
@@ -26,11 +29,29 @@ type Row = {
 };
 
 // Platform owner only: every office that opened an account, with counts (never the content of their cases).
-export default async function PlatformPage() {
-  await getCtx();
+export default function PlatformPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center text-muted">جارٍ التحميل…</div>}>
+      <Platform />
+    </Suspense>
+  );
+}
+
+async function signOut() {
+  "use server";
   const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}
+
+// The platform owner does not need an office of their own: this page stands outside the office pages.
+async function Platform() {
+  const supabase = await createClient();
+  const { data: cl } = await supabase.auth.getClaims();
+  if (!cl?.claims?.sub) redirect("/login");
   const { data: owner } = await supabase.rpc("is_platform_admin");
   if (!owner) notFound();
+  const { data: mine } = await supabase.from("members").select("office_id").eq("user_id", cl.claims.sub).eq("is_active", true).limit(1);
   const { data, error } = await supabase.rpc("platform_offices");
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as Row[];
@@ -57,7 +78,26 @@ export default async function PlatformPage() {
   ).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="space-y-6">
+    <div className="flex min-h-dvh flex-col">
+      <header className="border-b border-line bg-white">
+        <div className="mx-auto flex max-w-[1560px] items-center gap-3 px-4 py-3 lg:px-8">
+          <Image src="/icons/icon-192.png" alt="" width={32} height={32} className="rounded-lg" />
+          <div className="flex-1">
+            <div className="font-display font-bold">{BRAND.name}</div>
+            <div className="text-[11px] text-muted">إدارة المنصة</div>
+          </div>
+          {mine?.length ? (
+            <Link href="/" className="rounded-lg border border-line px-3 py-1.5 text-sm hover:border-brand">
+              مكتبي ←
+            </Link>
+          ) : null}
+          <form action={signOut}>
+            <button className="text-sm text-muted hover:text-red-700">تسجيل الخروج</button>
+          </form>
+        </div>
+      </header>
+      <main className="flex-1 px-4 py-6 md:px-8">
+    <div className="mx-auto max-w-[1500px] space-y-6">
       <div>
         <h1 className="text-2xl font-bold">لوحة المنصة</h1>
         <p className="text-sm text-muted">
@@ -148,6 +188,8 @@ export default async function PlatformPage() {
           </tbody>
         </table>
       </div>
+    </div>
+      </main>
     </div>
   );
 }
