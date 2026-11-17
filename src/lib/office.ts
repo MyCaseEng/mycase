@@ -24,12 +24,10 @@ export const getCtx = cache(async (): Promise<Ctx> => {
   const claims = cl?.claims as { sub?: string; email?: string; user_metadata?: { terms_version?: string; must_change?: boolean } } | undefined;
   if (!claims?.sub) redirect("/login");
   const userId = claims.sub;
-  // a team account made by the expert starts with a temporary password
-  if (claims.user_metadata?.must_change) redirect("/change-password");
   const findMember = () =>
     supabase
       .from("members")
-      .select("office_id, role, display_name, offices(name)")
+      .select("*, offices(name)")
       .eq("user_id", userId)
       .eq("is_active", true)
       .order("created_at")
@@ -40,6 +38,8 @@ export const getCtx = cache(async (): Promise<Ctx> => {
     supabase.from("terms_acceptances").select("version").eq("user_id", userId).eq("version", TERMS_VERSION).maybeSingle(),
   ]);
   let { data: m } = mem;
+  // a team account made by the expert starts with a temporary password
+  if ((m as { must_change?: boolean } | null)?.must_change) redirect("/change-password");
   // the expert (office admin) accepts the terms once for the office; team members are covered by that.
   // Agreeing at sign-up counts, and is recorded here on the first visit.
   if (m?.role === "admin" && !terms.error && !terms.data) {

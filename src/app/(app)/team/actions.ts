@@ -113,6 +113,7 @@ export async function addStaff(_: StaffResult, form: FormData): Promise<StaffRes
     await admin.auth.admin.deleteUser(made.user.id);
     return { ok: false, text: me.message };
   }
+  await admin.from("members").update({ must_change: true }).eq("office_id", ctx.officeId).eq("user_id", made.user.id);
   await log("إضافة عضو", { login, role });
   revalidatePath("/team");
   return { ok: true, text: `أُنشئ حساب ${display}.`, login, password };
@@ -129,6 +130,7 @@ export async function resetStaffPassword(userId: string): Promise<StaffResult> {
   const password = tempPassword();
   const { error } = await admin.auth.admin.updateUserById(userId, { password, user_metadata: { must_change: true } });
   if (error) return { ok: false, text: error.message };
+  await admin.from("members").update({ must_change: true }).eq("user_id", userId);
   await log("إعادة تعيين كلمة مرور", { login: m.login });
   return { ok: true, text: `كلمة مرور مؤقتة جديدة لـ ${m.display_name}.`, login: m.login, password };
 }

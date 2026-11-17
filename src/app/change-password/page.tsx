@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BRAND } from "@/lib/brand";
+import { changeOwnPassword } from "./actions";
 
 // First sign-in of a team account (or after the expert reset it): replace the temporary password with one's own.
 export default function ChangePasswordPage() {
@@ -18,15 +19,14 @@ export default function ChangePasswordPage() {
     if (p1.length < 8) return setErr("كلمة المرور 8 أحرف على الأقل.");
     if (p1 !== p2) return setErr("كلمتا المرور غير متطابقتين.");
     setBusy(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ password: p1, data: { must_change: false } });
-    if (error) {
+    const r = await changeOwnPassword(p1);
+    if (!r.ok) {
       setBusy(false);
-      return setErr(/different|same/i.test(error.message) ? "اختر كلمة مرور مختلفة عن المؤقتة." : error.message);
+      return setErr(/different|same/i.test(r.text) ? "اختر كلمة مرور مختلفة عن المؤقتة." : r.text);
     }
-    await supabase.auth.refreshSession();
-    router.replace("/");
-    router.refresh();
+    // full reload so every page reads the cleared flag
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign("/");
   }
 
   async function signOut() {
