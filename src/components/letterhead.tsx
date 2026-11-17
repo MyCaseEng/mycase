@@ -2,7 +2,7 @@ import { countryName, flagUrl, validCountry } from "@/lib/countries";
 import { SpecialtyIcon, specialtyOf } from "@/lib/specialties";
 
 const MEDAL =
-  "flex size-12 items-center justify-center rounded-full bg-brand-soft ring-1 ring-gold/50 ring-offset-4 ring-offset-white md:size-[84px]";
+  "flex size-[62px] items-center justify-center rounded-full bg-brand-soft ring-1 ring-gold/50 ring-offset-4 ring-offset-white md:size-[110px]";
 
 // The office header: basmala and the verse are fixed; office name, expert and country come from the office.
 export default function Letterhead({
