@@ -28,7 +28,7 @@ const ITEMS = [
 export default function Nav({ onNavigate, horizontal }: { onNavigate?: () => void; horizontal?: boolean }) {
   const path = usePathname();
   return (
-    <nav className={horizontal ? "flex flex-wrap items-stretch gap-x-1" : "flex flex-col gap-1"}>
+    <nav className={horizontal ? "flex flex-nowrap items-stretch" : "flex flex-col gap-1"}>
       {ITEMS.map((it) => {
         const active = it.href === "/" ? path === "/" : path.startsWith(it.href);
         return (
@@ -39,7 +39,7 @@ export default function Nav({ onNavigate, horizontal }: { onNavigate?: () => voi
             className={
               horizontal
                 ? // top bar: a thin line under the open page
-                  `flex items-center gap-1.5 border-b-2 px-2.5 py-3 text-sm whitespace-nowrap transition-colors ${
+                  `flex items-center gap-1.5 border-b-2 px-2 py-3 text-sm whitespace-nowrap transition-colors 2xl:px-3 ${
                     active ? "border-brand font-semibold text-brand" : "border-transparent text-muted hover:border-line hover:text-foreground"
                   }`
                 : `flex items-center gap-2.5 border-s-[3px] px-3 py-2 text-sm transition-colors ${
@@ -47,7 +47,13 @@ export default function Nav({ onNavigate, horizontal }: { onNavigate?: () => voi
                   }`
             }
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className={`flex-none ${active ? "" : "opacity-85"}`}>
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              aria-hidden="true"
+              className={`flex-none ${active ? "" : "opacity-85"} ${horizontal ? "hidden 2xl:block" : ""}`}
+            >
               <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 {ICON[it.href]}
               </g>
