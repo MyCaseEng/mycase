@@ -5,6 +5,7 @@ import { getCtx, ROLE_LABEL } from "@/lib/office";
 import { createClient } from "@/lib/supabase/server";
 import { loadBoard, caseLabel, getOfficeInfo } from "@/lib/cases";
 import Letterhead from "@/components/letterhead";
+import { themeVars } from "@/lib/countries";
 import { caseAlerts, LEVEL_ORDER } from "@/lib/alerts";
 import { normCaseNo } from "@/lib/format";
 import { Bell, type CaseAlerts } from "@/components/alerts-ui";
@@ -39,6 +40,7 @@ async function SignedIn({ children }: { children: React.ReactNode }) {
     .sort((a, b) => LEVEL_ORDER[a.alerts[0].level] - LEVEL_ORDER[b.alerts[0].level]);
   return (
     <Shell officeName={ctx.officeName} user={{ name: ctx.displayName, role: ROLE_LABEL[ctx.role] }} signOut={signOut} bell={<Bell groups={groups} />}
+      theme={themeVars(info.country)}
       letterhead={<Letterhead officeName={ctx.officeName} expertName={info.expertName} country={info.country} />}
     >
       {children}

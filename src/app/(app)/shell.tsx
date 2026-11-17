@@ -11,8 +11,10 @@ export default function Shell({
   signOut,
   bell,
   letterhead,
+  theme,
   children,
 }: {
+  theme: React.CSSProperties;
   letterhead: React.ReactNode;
   bell: React.ReactNode;
   officeName: string;
@@ -42,7 +44,7 @@ export default function Shell({
     </div>
   );
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex min-h-dvh" style={theme}>
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 border-l border-line bg-white md:block">{side}</aside>
       {open && (
         <div className="fixed inset-0 z-40 md:hidden" onClick={() => setOpen(false)}>

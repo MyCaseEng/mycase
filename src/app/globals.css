@@ -5,9 +5,9 @@
   --background: #fbf8f3;
   --foreground: #2a1a1e;
   --brand: #8a1538;
-  --brand-soft: #f6e6ea;
+  --brand-soft: color-mix(in srgb, var(--brand) 9%, white);
   --gold: #96713a;
-  --gold-soft: #f4e9d8;
+  --gold-soft: color-mix(in srgb, var(--gold) 14%, white);
   --muted: #6b5e5a;
   --line: #e9dfd3;
   --surface-2: #f5ede4;
