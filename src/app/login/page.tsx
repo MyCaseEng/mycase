@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BRAND } from "@/lib/brand";
+import { TERMS_VERSION } from "@/lib/terms";
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [agree, setAgree] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   async function submit(e: React.FormEvent) {
@@ -40,10 +42,11 @@ export default function LoginPage() {
       }
       if (mode === "signup") {
         if (password.length < 8) throw new Error("كلمة المرور 8 أحرف على الأقل.");
+        if (!agree) throw new Error("يلزم الموافقة على شروط الاستخدام لإنشاء الحساب.");
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${origin}/auth/callback` },
+          options: { emailRedirectTo: `${origin}/auth/callback`, data: { terms_version: TERMS_VERSION } },
         });
         if (error) throw error;
         if (data.session) {
@@ -105,6 +108,18 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-line px-3 py-2 outline-none focus:border-brand"
               />
+            </label>
+          )}
+          {mode === "signup" && (
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} required className="mt-1 size-4 accent-[var(--brand)]" />
+              <span>
+                قرأتُ{" "}
+                <a href="/terms" target="_blank" className="font-semibold text-brand underline underline-offset-4">
+                  شروط الاستخدام
+                </a>{" "}
+                وأوافق عليها.
+              </span>
             </label>
           )}
           {msg && (

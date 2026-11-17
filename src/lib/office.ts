@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { TERMS_VERSION } from "@/lib/terms";
 
 export type Role = "admin" | "member" | "viewer";
 export type Ctx = {
@@ -19,7 +20,7 @@ export const getCtx = cache(async (): Promise<Ctx> => {
   const supabase = await createClient();
   // getClaims verifies the session token locally (no round trip to the auth server on every page)
   const { data: cl } = await supabase.auth.getClaims();
-  const claims = cl?.claims as { sub?: string; email?: string } | undefined;
+  const claims = cl?.claims as { sub?: string; email?: string; user_metadata?: { terms_version?: string } } | undefined;
   if (!claims?.sub) redirect("/login");
   const userId = claims.sub;
   const findMember = () =>
@@ -31,7 +32,16 @@ export const getCtx = cache(async (): Promise<Ctx> => {
       .order("created_at")
       .limit(1)
       .maybeSingle();
-  let { data: m } = await findMember();
+  const [mem, terms] = await Promise.all([
+    findMember(),
+    supabase.from("terms_acceptances").select("version").eq("user_id", userId).eq("version", TERMS_VERSION).maybeSingle(),
+  ]);
+  // the current terms must be accepted; agreeing at sign-up counts (recorded here on the first visit)
+  if (!terms.error && !terms.data) {
+    if (claims.user_metadata?.terms_version === TERMS_VERSION) await supabase.rpc("accept_terms", { p_version: TERMS_VERSION });
+    else redirect("/accept-terms");
+  }
+  let { data: m } = mem;
   if (!m) {
     // only when the user has no office yet: join any office that invited this email
     await supabase.rpc("accept_invitations");

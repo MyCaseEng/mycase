@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 // Refreshes the Supabase session cookie on every page request and sends signed-out users to /login.
-const PUBLIC = ["/login", "/auth", "/reset-password"];
+const PUBLIC = ["/login", "/auth", "/reset-password", "/terms"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

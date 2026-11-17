@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BRAND } from "@/lib/brand";
 import SubmitButton from "@/components/submit-button";
 import { COUNTRIES, DEFAULT_COUNTRY, validCountry } from "@/lib/countries";
+import { TERMS_VERSION } from "@/lib/terms";
 import { SPECIALTIES, DEFAULT_SPECIALTY, validSpecialty } from "@/lib/specialties";
 
 // First sign-in with no office: create one (you become its admin) or wait for an invitation.
@@ -11,7 +12,7 @@ async function createOffice(formData: FormData) {
   "use server";
   const name = String(formData.get("name") || "").trim();
   const display = String(formData.get("display") || "").trim();
-  if (!name || !display) return;
+  if (!name || !display || formData.get("agree") !== "on") return;
   const supabase = await createClient();
   // one office per new account: if this person already belongs to an office (e.g. the form was sent twice), go to it
   const { data: cl } = await supabase.auth.getClaims();
@@ -19,6 +20,7 @@ async function createOffice(formData: FormData) {
   if (already?.length) redirect("/");
   const { data: officeId, error } = await supabase.rpc("create_office", { p_name: name, p_display_name: display });
   if (error) throw new Error(error.message);
+  await supabase.rpc("accept_terms", { p_version: TERMS_VERSION });
   await supabase.from("offices").update({
       country: validCountry(formData.get("country")),
       specialty: validSpecialty(formData.get("specialty")),
@@ -113,6 +115,16 @@ async function Welcome() {
             placeholder="اسمك كما يظهر للفريق"
             className="w-full rounded-lg border border-line px-3 py-2 outline-none focus:border-brand"
           />
+          <label className="flex items-start gap-2 rounded-lg bg-background p-3 text-sm">
+            <input type="checkbox" name="agree" required className="mt-1 size-4 accent-[var(--brand)]" />
+            <span>
+              قرأتُ{" "}
+              <a href="/terms" target="_blank" className="font-semibold text-brand underline underline-offset-4">
+                شروط الاستخدام
+              </a>{" "}
+              وأوافق عليها، وأقرّ بأنني الخبير صاحب المكتب أو مفوَّض عنه.
+            </span>
+          </label>
           <SubmitButton pendingText="جارٍ إنشاء المكتب…" className="w-full rounded-lg bg-ink py-2.5 font-semibold text-white hover:bg-ink-hover">
             إنشاء المكتب
           </SubmitButton>
