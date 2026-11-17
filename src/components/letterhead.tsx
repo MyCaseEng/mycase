@@ -25,12 +25,10 @@ export default function Letterhead({
     <div className="border-b border-line bg-white">
       {/* Country flag at the far right, expertise icon at the far left, the letterhead text in between. */}
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 pb-3 pt-3.5">
-        {/* Each medallion sits in the middle of its side space. The flag is shown whole (never cropped) inside the circle. */}
+        {/* Each medallion sits in the middle of its side space. The flag is a round flag, drawn for circles. */}
         <div className="flex justify-center">
-          <span title={countryName(code)} className={MEDAL}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={flagUrl(code)} alt="" className="h-5 w-auto rounded-[3px] shadow-sm ring-1 ring-black/10 md:h-9" />
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={flagUrl(code)} alt="" title={countryName(code)} className={`${MEDAL} object-cover`} />
         </div>
         <div className="min-w-0 text-center">
         <div className="font-ruqaa text-[26px] font-bold leading-snug text-brand md:text-[34px]">بسم الله الرحمن الرحيم</div>

@@ -73,7 +73,7 @@ export default async function SettingsPage() {
           <span className="text-sm text-muted">الدولة (تُحدَّد مرة واحدة عند إنشاء المكتب)</span>
           <div className="mt-1 flex items-center gap-2 rounded-lg border border-line bg-background px-3 py-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={flagUrl(validCountry(office?.country))} alt="" width={20} height={13} className="h-[13px] w-auto rounded-[2px] ring-1 ring-line" />
+            <img src={flagUrl(validCountry(office?.country))} alt="" width={18} height={18} className="size-[18px] rounded-full" />
             {countryName(office?.country)}
           </div>
         </div>

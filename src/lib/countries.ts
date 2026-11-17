@@ -28,8 +28,8 @@ export const DEFAULT_COUNTRY = "QA";
 export const countryName = (code?: string | null) =>
   COUNTRIES.find(([c]) => c === code)?.[1] ?? COUNTRIES.find(([c]) => c === DEFAULT_COUNTRY)![1];
 export const validCountry = (code: unknown) => (COUNTRIES.some(([c]) => c === code) ? String(code) : DEFAULT_COUNTRY);
-// Flag images from flagcdn.com (free, all countries). PNG keeps each flag's own proportions.
-export const flagUrl = (code: string) => `https://flagcdn.com/w160/${code.toLowerCase()}.png`;
+// Round flags drawn for circles (HatScripts circle-flags, free, every country), served from the project's own site.
+export const flagUrl = (code: string) => `https://hatscripts.github.io/circle-flags/flags/${code.toLowerCase()}.svg`;
 
 // Platform colors per country. The look is calm and professional: white and grey surfaces, charcoal buttons,
 // and the country color only as a light touch (basmala, the active menu line, links, small badges).
