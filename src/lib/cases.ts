@@ -164,5 +164,15 @@ export async function listProcRows(caseId: string) {
 export async function getOfficeInfo(officeId: string) {
   const supabase = await createClient();
   const { data } = await supabase.from("offices").select("*").eq("id", officeId).single();
-  return { expertName: data?.expert_name ?? "", address: data?.address ?? "", country: (data?.country as string | undefined) ?? "QA", specialty: (data?.specialty as string | undefined) ?? "eng" };
+  const v = (k: string) => ((data as Record<string, unknown> | null)?.[k] as string | null | undefined) ?? "";
+  return {
+    name: v("name"),
+    expertName: v("expert_name"),
+    address: v("address"),
+    country: v("country") || "QA",
+    specialty: v("specialty") || "eng",
+    reg: v("expert_reg"),
+    phone: v("phone"),
+    email: v("email"),
+  };
 }

@@ -20,11 +20,17 @@ export default function TemplateRow({ kind, label, items, srcs, isAdmin }: { kin
       <div className="flex flex-wrap items-center gap-2">
         <b className="flex-1">{label}</b>
         {general ? (
-          <span className="text-xs text-green-700">✓ {general.fileName} · {fmtD(general.updatedAt)}</span>
+          <span className="text-xs text-green-700">✓ قالب المكتب: {general.fileName} · {fmtD(general.updatedAt)}</span>
         ) : (
-          <span className="text-xs text-amber-700">لم يُرفع قالب</span>
+          <span className="text-xs text-muted">
+            النموذج القياسي ·{" "}
+            <a href={`/forms/${kind}.docx`} download={`${label}.docx`} className="text-brand hover:underline">
+              تنزيل للاطلاع
+            </a>
+          </span>
         )}
-        {isAdmin && <Upload kind={kind} pending={pending} run={(fd, src) => start(async () => setErr(await uploadTemplate(kind, src, fd)))} src={null} text={general ? "استبدال" : "رفع القالب العام"} />}
+        {isAdmin && <Upload kind={kind} pending={pending} run={(fd, src) => start(async () => setErr(await uploadTemplate(kind, src, fd)))} src={null} text={general ? "استبدال" : "رفع قالب خاص بالمكتب"} />}
+        {isAdmin && general && <Confirm2 label="العودة للقياسي" confirmLabel="تأكيد" onConfirm={() => start(() => deleteTemplate(kind, null))} />}
       </div>
       {special.map((t) => (
         <div key={t.src} className="flex flex-wrap items-center gap-2 pr-4 text-xs">

@@ -96,7 +96,7 @@ export function bufToB64(buf: ArrayBuffer) {
   return btoa(bin);
 }
 
-export async function fillTemplate(templateB64: string, vars: Record<string, string>, lists: Record<string, string[]> = {}) {
+export async function fillTemplate(templateB64: string, vars: Record<string, string>, lists: Record<string, string[]> = {}, swap: Record<string, string> = {}) {
   const ents = await unzipEntries(b64ToBuf(templateB64));
   const td = new TextDecoder(), te = new TextEncoder();
   for (const en of ents) {
@@ -104,6 +104,7 @@ export async function fillTemplate(templateB64: string, vars: Record<string, str
     let x = td.decode(en.data);
     for (const [k, items] of Object.entries(lists)) x = expandParaList(x, k, items.length ? items : ["…………………………………………"]);
     x = x.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, k) => (vars[k] != null ? xmlEsc(vars[k]) : ""));
+    for (const [a, b] of Object.entries(swap)) x = x.split(a).join(b); // e.g. the accent colour
     en.data = te.encode(x);
   }
   return zipStore(ents);

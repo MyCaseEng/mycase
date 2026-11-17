@@ -9,9 +9,11 @@ import Confirm2 from "@/components/confirm2";
 import { createLetters, updateLetter, markSent, setReply, deleteLetter, issueLetterRef, type QRes } from "../q-actions";
 import type { CaseSettings } from "./view";
 import { qLetterVars, qMailBody, type OfficeInfo } from "@/lib/docs";
-import { fillTemplate, saveBlob, safeName, bufToB64, buildEml, DOCX_MIME } from "@/lib/docx";
+import { saveBlob, safeName, bufToB64, buildEml, DOCX_MIME } from "@/lib/docx";
+import { questionsForm } from "@/lib/forms";
+import { makeForm } from "../form-loader";
 import { caseRef, srcOf } from "@/lib/format";
-import { getTemplate, logDoc, setLetterSendTo } from "../doc-actions";
+import { logDoc, setLetterSendTo } from "../doc-actions";
 
 const panel = "rounded-2xl border border-line bg-white p-5";
 
@@ -51,10 +53,8 @@ export default function QuestionsPanel({ c, letters, refs, settings, office, can
 }
 
 async function buildQDoc(c: Case, l: QLetter, refText: string, office: OfficeInfo) {
-  const t = await getTemplate("questions", srcOf(c) || null);
-  if ("error" in t) throw new Error(t.error);
   const v = qLetterVars(c, l, refText, office);
-  return { blob: await fillTemplate(t.b64, v.vars, v.lists), addr: v.addr };
+  return { blob: await makeForm(questionsForm(c, l, office, refText), srcOf(c) || null, office.country), addr: v.addr };
 }
 
 function LetterRow({ c, l, partyName, partyRole, refText, canWrite, onEdit, onMail, office }: { c: Case; l: QLetter; partyName: string; partyRole: string; refText: string; canWrite: boolean; onEdit: () => void; onMail: () => void; office: OfficeInfo }) {

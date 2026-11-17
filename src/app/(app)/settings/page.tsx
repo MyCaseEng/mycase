@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCtx } from "@/lib/office";
 import { getSettings } from "@/lib/settings";
 import { QTPL_DEFAULT } from "@/lib/refs";
-import { TEMPLATE_KINDS } from "@/lib/docs";
+import { FORM_KINDS } from "@/lib/forms";
 import { SRCS } from "@/lib/format";
 import TemplateRow from "./template-row";
 import SaveForm from "@/components/save-form";
@@ -20,6 +20,9 @@ async function saveOffice(_: unknown, form: FormData): Promise<{ ok: boolean; te
       name: String(form.get("name") || "").trim(),
       expert_name: String(form.get("expert") || "").trim() || null,
       address: String(form.get("address") || "").trim() || null,
+      expert_reg: String(form.get("expert_reg") || "").trim() || null,
+      phone: String(form.get("phone") || "").trim() || null,
+      email: String(form.get("email") || "").trim() || null,
     })
     .eq("id", ctx.officeId);
   if (error) return { ok: false, text: "تعذّر الحفظ: " + error.message };
@@ -75,6 +78,21 @@ export default async function SettingsPage() {
           <span className="text-sm text-muted">اسم الخبير (للتوقيع في الخطابات والتقارير)</span>
           <input name="expert" defaultValue={office?.expert_name ?? ""} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 disabled:bg-background" />
         </label>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="block">
+            <span className="text-sm text-muted">رقم قيد الخبير</span>
+            <input name="expert_reg" defaultValue={office?.expert_reg ?? ""} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 disabled:bg-background" />
+          </label>
+          <label className="block">
+            <span className="text-sm text-muted">هاتف المكتب</span>
+            <input name="phone" dir="ltr" defaultValue={office?.phone ?? ""} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-right disabled:bg-background" />
+          </label>
+          <label className="block">
+            <span className="text-sm text-muted">بريد المكتب</span>
+            <input name="email" type="email" dir="ltr" defaultValue={office?.email ?? ""} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-right disabled:bg-background" />
+          </label>
+        </div>
+        <p className="-mt-2 text-xs text-muted">تُطبع هذه البيانات في ترويسة النماذج (الخطابات والمحاضر والتقرير).</p>
         {/* The country is chosen once when the office is created; it is shown here, not edited. */}
         <div>
           <span className="text-sm text-muted">الدولة (تُحدَّد مرة واحدة عند إنشاء المكتب)</span>
@@ -92,7 +110,7 @@ export default async function SettingsPage() {
           </div>
         </div>
         <label className="block">
-          <span className="text-sm text-muted">عنوان المكتب (يُطبع في محضر المعاينة إذا كانت في مقر المكتب)</span>
+          <span className="text-sm text-muted">عنوان المكتب (يُطبع في الترويسة، وفي المحاضر إذا كان الموعد في مقر المكتب)</span>
           <input name="address" defaultValue={office?.address ?? ""} disabled={!isAdmin} className="mt-1 w-full rounded-lg border border-line px-3 py-2 disabled:bg-background" />
         </label>
         {!isAdmin && <p className="text-sm text-muted">يعدّل هذه البيانات مدير المكتب.</p>}
@@ -120,12 +138,12 @@ export default async function SettingsPage() {
         </div>
       </SaveForm>
       <section className="space-y-3 rounded-xl border border-line bg-white p-5">
-        <h2 className="font-semibold">قوالب Word</h2>
-        <p className="text-sm text-muted">
-          ارفع قالب المكتب لكل نوع. القالب «العام» يُستعمل لكل الدعاوى، ويمكن رفع قالب بترويسة مختلفة لجهة تكليف معيّنة (مثل جمعية المهندسين) فيُستعمل لدعاويها بدل العام.
+        <h2 className="font-semibold">النماذج وقوالب Word</h2>
+        <p className="text-sm leading-7 text-muted">
+          تستعمل المنصة نماذجها القياسية تلقائياً، بترويسة مكتبك وبياناته. إن أردت صياغة أو ترويسة خاصة بمكتبك لنموذج معيّن، ارفع قالبك فيحل محل القياسي عندك. ويمكن رفع قالب لجهة تكليف معيّنة (مثل جمعية المهندسين) فيُستعمل لدعاويها فقط.
         </p>
         <div className="divide-y divide-line rounded-lg border border-line">
-          {TEMPLATE_KINDS.map(([k, label]) => (
+          {FORM_KINDS.map(([k, label]) => (
             <TemplateRow
               key={k}
               kind={k}

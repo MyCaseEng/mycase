@@ -5,12 +5,13 @@ import { getCtx } from "@/lib/office";
 
 
 // The office template for a kind: the one for this assigning body if uploaded, else the general one.
-export async function getTemplate(kind: string, src: string | null): Promise<{ b64: string } | { error: string }> {
+// The office's own uploaded template for this kind (or for this assigning body); otherwise the platform's standard form.
+export async function getTemplate(kind: string, src: string | null): Promise<{ b64: string } | { standard: true }> {
   const ctx = await getCtx();
   const supabase = await createClient();
   const { data } = await supabase.from("templates").select("assign_src, content").eq("office_id", ctx.officeId).eq("kind", kind);
   const pick = (data ?? []).find((t) => src && t.assign_src === src) ?? (data ?? []).find((t) => !t.assign_src);
-  if (!pick?.content) return { error: "لم يُرفع قالب Word لهذا المستند بعد. يرفعه مدير المكتب من الإعدادات ← قوالب Word." };
+  if (!pick?.content) return { standard: true };
   return { b64: pick.content };
 }
 

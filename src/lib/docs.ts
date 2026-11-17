@@ -2,7 +2,7 @@
 import type { Case, Ev, Party, QLetter } from "@/lib/cases";
 import type { Ref } from "@/lib/refs";
 import { caseRef, fmtD, isOrg, normCaseNo, normRole, roleSide, todayStr } from "@/lib/format";
-import { DOTS } from "@/lib/docx";
+import { signLine } from "@/lib/specialties";
 
 export const AR_DAYS = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 export const dayName = (d: string) => AR_DAYS[new Date(d + "T00:00:00Z").getUTCDay()];
@@ -153,43 +153,18 @@ export function procAttsBySide(vis: ProcLine[]) {
 
 /* ---------------- letters to the court ---------------- */
 export type LetterKey = "start" | "postpone" | "deposit" | "both";
-export type LetterOpts = { date: string; hearing?: string; period?: string; amount?: string; payer?: string; reason?: string };
-const money = (n: number | string) => Number(n).toLocaleString("en-US");
-export const LETTERS: Record<LetterKey, { label: string; cat: string; subj: (c: Case) => string; body: (c: Case, o: LetterOpts) => string }> = {
-  start: {
-    label: "إشعار مباشرة المأمورية",
-    cat: "إشعار بمباشرة المأمورية",
-    subj: (c) => `إشعار بمباشرة المأمورية في الدعوى ${caseRef(c)}`,
-    body: (c, o) =>
-      `بنــاءً علــى الحكم التمهيدي الصــادر مــن عدالة المحكمة الموقرة${c.prelim_date ? " بتاريخ " + fmtD(c.prelim_date) : ""} بندبنــا خبيـــراً هندسيــاً فـي الدعوى المذكورة أعلاه، نحيط عدالتكم علماً بأننا قد باشرنا أعمال المأمورية اعتباراً من تاريخ ${fmtD(o.date)}.\n\nوسنقوم بإخطار أطراف الدعوى بمواعيد الاجتماعات والمعاينة، وموافاة عدالتكم بالتقرير فور الانتهاء من أعمال المأمورية.`,
-  },
-  postpone: {
-    label: "كتاب طلب تأجيل",
-    cat: "طلب تأجيل",
-    subj: (c) => `طلب تأجيل نظر الدعوى ${caseRef(c)}`,
-    body: (c, o) =>
-      `بالإشارة إلى الدعوى المذكورة أعلاه، والمحدد لنظرها جلسة ${o.hearing ? dayName(o.hearing) + " الموافق " + fmtD(o.hearing) : "……………"}، نفيد عدالتكم بأن أعمال الخبرة لا تزال جارية، وذلك ${o.reason || "……………………………………"}.\n\nلذا نلتمس من عدالتكم التكرم بتأجيل نظر الدعوى لمدة ${o.period || "……………"} حتى يتسنى لنا استكمال أعمال المأمورية وإيداع التقرير.`,
-  },
-  deposit: {
-    label: "كتاب طلب زيادة أمانة",
-    cat: "طلب زيادة أمانة",
-    subj: (c) => `طلب زيادة أمانة الخبير في الدعوى ${caseRef(c)}`,
-    body: (c, o) =>
-      `بالإشارة إلى الحكم التمهيدي الصادر في الدعوى المذكورة أعلاه${c.deposit_ordered ? "، والذي قدّر أمانة الخبير بمبلغ " + money(c.deposit_ordered) + " ريال قطري" : ""}، وبعد الاطلاع على ملف الدعوى وما تتطلبه المأمورية من أعمال ${o.reason || "……………………………………"}، تبيّن أن الأمانة المقدرة لا تتناسب مع حجم الأعمال المطلوبة.\n\nلذا نلتمس من عدالتكم التكرم بإعادة تقدير الأمانة لتصبح ${o.amount ? money(o.amount) + " ريال قطري" : "……………"}، وإلزام ${o.payer || "……………"} بسدادها، حتى يتسنى لنا مباشرة أعمال المأمورية وإنجازها على الوجه المطلوب.`,
-  },
-  both: {
-    label: "كتاب طلب تأجيل وإعادة تقدير الأمانة",
-    cat: "طلب تأجيل وإعادة تقدير الأمانة",
-    subj: (c) => `طلب تأجيل نظر الدعوى وإعادة تقدير الأمانة في الدعوى ${caseRef(c)}`,
-    body: (c, o) =>
-      `بالإشارة إلى الدعوى المذكورة أعلاه، والمحدد لنظرها جلسة ${o.hearing ? dayName(o.hearing) + " الموافق " + fmtD(o.hearing) : "……………"}${c.deposit_ordered ? "، وإلى الحكم التمهيدي الذي قدّر أمانة الخبير بمبلغ " + money(c.deposit_ordered) + " ريال قطري" : ""}، وبعد الاطلاع على ملف الدعوى وما تتطلبه المأمورية من أعمال، تبيّن أن الأمانة المقدرة لا تتناسب مع حجم الأعمال المطلوبة، وأن المدة المتبقية لا تكفي لاستكمال أعمال المأمورية، وذلك ${o.reason || "……………………………………"}.\n\nلذا نلتمس من عدالتكم التكرم بتأجيل نظر الدعوى لمدة ${o.period || "……………"}، وإعادة تقدير الأمانة لتصبح ${o.amount ? money(o.amount) + " ريال قطري" : "……………"} وإلزام ${o.payer || "……………"} بسدادها.`,
-  },
+// court letters: the wording lives in the standard forms (src/lib/forms.ts); here only the name and the register category
+export const LETTERS: Record<LetterKey, { label: string; cat: string }> = {
+  start: { label: "إخطار الأطراف ببدء المأمورية", cat: "إشعار بمباشرة المأمورية" },
+  postpone: { label: "طلب تأجيل موعد إيداع تقرير الخبرة", cat: "طلب تأجيل" },
+  deposit: { label: "طلب إعادة تقدير الأمانة", cat: "طلب زيادة أمانة" },
+  both: { label: "طلب تأجيل الإيداع وإعادة تقدير الأمانة", cat: "طلب تأجيل وإعادة تقدير الأمانة" },
 };
 
 /* ---------------- the "مستندات ونماذج الخبير" list ---------------- */
 export type DocItem = {
   key: string;
-  kind: "letter" | "q" | "qsetup" | "meet" | "insp" | "report";
+  kind: "letter" | "start" | "q" | "qsetup" | "meet" | "insp" | "receipt" | "handover" | "report";
   label: string;
   sub: string;
   letter?: LetterKey;
@@ -211,8 +186,11 @@ export function caseDocs(c: Case, letters: QLetter[], refs: Ref[]): DocItem[] {
     const r = latest(x.cat);
     L.push({ key: `letter-${k}`, kind: "letter", letter: k, label: x.label, sub: r ? `آخر كتاب ${fmtD(r.issued_at)}` : "كتاب للمحكمة", ref: r, category: x.cat });
   };
-  lt("start");
   const main = [...sideOfCase(c, 1), ...sideOfCase(c, 2)];
+  // 01: one notice per party that the mission has started
+  main.forEach((p) =>
+    L.push({ key: `start-${p.id}`, kind: "start", party: p, label: `إخطار ${lilRole(p.role)} ببدء المأمورية`, sub: p.name, ref: live.find((r) => r.category === "إشعار بمباشرة المأمورية" && (r.title ?? "").includes(p.name)), category: "إشعار بمباشرة المأمورية" })
+  );
   main.forEach((p) => {
     const qs = letters.filter((l) => l.party_id === p.id);
     if (qs.length)
@@ -241,6 +219,8 @@ export function caseDocs(c: Case, letters: QLetter[], refs: Ref[]): DocItem[] {
   const insps = evs.filter((e) => e.type === "معاينة");
   insps.forEach((e) => L.push({ key: `insp-${e.id}`, kind: "insp", ev: e, label: "محضر المعاينة", sub: fmtD(e.date) + (e.place ? ` · ${e.place}` : ""), ref: refFor("محضر معاينة", e.id), category: "محضر معاينة" }));
   if (!insps.length) L.push({ key: "stub-i", kind: "insp", stub: true, label: "محضر المعاينة", sub: "لم يُحدَّد موعد", ref: refFor("محضر معاينة", null), category: "محضر معاينة" });
+  L.push({ key: "receipt", kind: "receipt", label: "محضر استلام مستندات", sub: "من أحد الأطراف", category: "وصل استلام" });
+  L.push({ key: "handover", kind: "handover", label: "محضر تسليم مستندات", sub: "إعادة الأصول أو تسليم مستندات", category: "وصل استلام" });
   const repCat = c.supplementary ? "تقرير تكميلي" : "تقرير محكمة";
   L.push({ key: "report", kind: "report", label: "تقرير الخبرة", sub: c.report_date ? `سُلّم ${fmtD(c.report_date)}` : "للمحكمة", ref: latest(repCat), category: repCat });
   lt("postpone");
@@ -250,46 +230,8 @@ export function caseDocs(c: Case, letters: QLetter[], refs: Ref[]): DocItem[] {
 }
 
 /* ---------------- template variables for each document ---------------- */
-export type OfficeInfo = { expertName: string; address: string };
-
-export function docVars(c: Case & { proc_num?: string }, d: DocItem, ref: string, office: OfficeInfo, letters: QLetter[], procRows: ProcRow[]): { kind: string; vars: Record<string, string>; lists: Record<string, string[]> } {
-  const R = ref || "……………";
-  if (d.kind === "meet") {
-    const e = d.ev;
-    const ps = d.party ? [d.party] : d.parties?.length ? d.parties : e ? invitedOf(c, e) : c.parties;
-    return {
-      kind: "meeting",
-      vars: { REF: R, CASE_NO: caseRef(c), DATE: e?.date ? fmtD(e.date) : "……………", DAY: e?.date ? dayName(e.date) : "……………",
-        PARTY_LINE: ps.map((p) => `${normRole(p.role)} : ${p.name}`).join(" ، "), SIG_PARTY: ps.length === 1 ? normRole(ps[0].role) : "الأطراف" },
-      lists: {},
-    };
-  }
-  if (d.kind === "insp") {
-    const e = d.ev;
-    const atOffice = !e?.place || e.place === OFFICE_PLACE;
-    return {
-      kind: "inspection",
-      vars: { REF: R, CASE_NO: caseRef(c), DATE: e?.date ? fmtD(e.date) : "……………", TIME: arTime(e?.time),
-        PLACE: atOffice ? OFFICE_PLACE + (office.address ? " - " + office.address : "") : e!.place!,
-        P1_LINE: sideLine(c, 1), P2_LINE: sideLine(c, 2), SIDE1: sideLabel(c, 1), SIDE2: sideLabel(c, 2), SIG_P1: sideLabel(c, 1), SIG_P2: sideLabel(c, 2) },
-      lists: {},
-    };
-  }
-  // report
-  const t = todayStr();
-  const { vis } = procList(c, letters, procRows);
-  const proc = vis.map(procLine);
-  proc.push(DOTS);
-  const at = procAttsBySide(vis);
-  const ses = c.events.filter((e) => e.type === "جلسة").map((e) => e.date).sort();
-  const next = ses.find((x) => x >= t) || ses.at(-1) || c.deadline || "";
-  return {
-    kind: "report",
-    vars: { REF: R, SUBJECT: DOTS.slice(0, 20), COURT: c.authority ?? "", CASE_NO: caseRef(c), P1_LINE: sideLine(c, 1), P2_LINE: sideLine(c, 2),
-      SESSION_DATE: next ? fmtD(next) : "……………", ATT_SIDE1: `مستندات ${sideLabel(c, 1)}`, ATT_SIDE2: `مستندات ${sideLabel(c, 2)}` },
-    lists: { MISSION: [DOTS, DOTS, DOTS], PROC: proc, ATT1: at.s1.length ? at.s1 : [DOTS, DOTS], ATT2: at.s2.length ? at.s2 : [DOTS, DOTS] },
-  };
-}
+// the office as printed on documents (letterhead, signature, currency)
+export type OfficeInfo = { expertName: string; address: string; name?: string; country?: string; specialty?: string; reg?: string; phone?: string; email?: string };
 
 export function qLetterVars(c: Case, l: QLetter, ref: string, office: OfficeInfo) {
   const p = c.parties.find((x) => x.id === l.party_id);
@@ -309,14 +251,14 @@ export function qMailBody(c: Case, l: QLetter, ref: string, office: OfficeInfo, 
     "",
     `الموضوع: أسئلة واستفسارات الخبير في الدعوى ${caseRef(c)}`,
     "",
-    `بنــاءً علــى الحكم التمهيدي الصــادر مــن عدالة المحكمة الموقرة بندبنــا خبيـــراً هندسيــاً في الدعوى المذكورة أعلاه، نطلب منكم تزويدنا بالرد على الأسئلة والاستفسارات التالية خلال ${qDaysTxt(l.days)} من تاريخه${l.due ? ` (أي في موعد أقصاه ${dayName(l.due)} ${fmtD(l.due)})` : ""}، مع إرفاق المستندات اللازمة.`,
+    `في إطار المأمورية المسندة إلينا${c.authority ? " من " + c.authority : ""} في الدعوى المذكورة أعلاه، نرجو منكم تزويدنا بالرد على الأسئلة والاستفسارات التالية خلال ${qDaysTxt(l.days)} من تاريخه${l.due ? ` (أي في موعد أقصاه ${dayName(l.due)} ${fmtD(l.due)})` : ""}، مع إرفاق المستندات اللازمة.`,
     "",
     ...l.questions.map((q, k) => `${k + 1}. ${q}`),
     "",
     `مرفق: خطاب الأسئلة والاستفسارات${ref ? " رقم " + ref : ""}.`,
     "",
     "وتفضلوا بقبول فائق التقدير والاحترام،",
-    `الخبير الهندسي/ ${office.expertName}`,
+    signLine(office.specialty, office.expertName),
   ]
     .filter((x) => x !== "" || true)
     .join("\n")
@@ -332,15 +274,15 @@ export const TEMPLATE_KINDS: [string, string][] = [
 ];
 
 /* ---------------- appointment emails (meetings and inspections) ---------------- */
-// Same wording as the first platform. {المخاطب} becomes «السادة / ... المحترمين» lines for the invited parties.
+// Neutral wording for every office. {المخاطب} becomes «السادة / ... المحترمين» lines for the invited parties.
 export const EV_TPL: Record<"اجتماع" | "معاينة", { subject: string; body: string }> = {
   اجتماع: {
     subject: "موعد الإجتماع في الدعوى رقم {رقم_الدعوى} {نوع_الدعوى}",
-    body: "{المخاطب}\nتحية طيبة وبعد،\n\nالموضوع: موعد الإجتماع في الدعوى رقم {رقم_الدعوى} {نوع_الدعوى}\n\nبنــاءً علــى الحكم الصــادر مــن عدالـــة المحكمـة بندبنا خبيرا في الدعوى {رقم_الدعوى} {نوع_الدعوى} المقامة بين :\n\n{أطراف_الدعوى}\n\nنود أن نعلمكم أنه تم تحديد موعد الإجتماع معكم يوم {اليوم} الموافق لـ {التاريخ} على الساعة {الساعة}، وسيكون الإجتماع في {المكان}، ونطلب منكم حضوركم أو من تفوضونه للحضور نيابة عنكم مع تزويدنا بكتاب التفويض.\n{رابط_الموقع}\n{ملاحظة}\n\nوتفضلوا بقبول فائق الاحترام والتقدير،\n{اسم_الخبير}",
+    body: "{المخاطب}\nتحية طيبة وبعد،\n\nالموضوع: موعد الإجتماع في الدعوى رقم {رقم_الدعوى} {نوع_الدعوى}\n\nبناءً على الحكم الصادر بندبنا خبيراً في الدعوى {رقم_الدعوى} {نوع_الدعوى} المقامة بين :\n\n{أطراف_الدعوى}\n\nنود أن نعلمكم أنه تم تحديد موعد الإجتماع معكم يوم {اليوم} الموافق لـ {التاريخ} على الساعة {الساعة}، وسيكون الإجتماع في {المكان}، ونطلب منكم حضوركم أو من تفوضونه للحضور نيابة عنكم مع تزويدنا بكتاب التفويض.\n{رابط_الموقع}\n{ملاحظة}\n\nوتفضلوا بقبول فائق الاحترام والتقدير،\n{اسم_الخبير}",
   },
   معاينة: {
     subject: "موعد المعاينة في الدعوى رقم {رقم_الدعوى} {نوع_الدعوى}",
-    body: "{المخاطب}\nتحية طيبة وبعد،\n\nالموضوع: موعد المعاينة في الدعوى رقم {رقم_الدعوى} {نوع_الدعوى}\n\nبنــاءً علــى الحكم الصــادر مــن عدالـــة المحكمـة بندبنا خبيرا في الدعوى {رقم_الدعوى} {نوع_الدعوى} المقامة بين :\n\n{أطراف_الدعوى}\n\nنود أن نعلمكم أنه تم تحديد موعد المعاينة يوم {اليوم} الموافق لـ {التاريخ} على الساعة {الساعة}، وستكون المعاينة في {المكان}، ونطلب منكم حضوركم أو من تفوضونه للحضور نيابة عنكم مع تزويدنا بكتاب التفويض، وتسهيل دخولنا إلى الموقع.\n{رابط_الموقع}\n{ملاحظة}\n\nوتفضلوا بقبول فائق الاحترام والتقدير،\n{اسم_الخبير}",
+    body: "{المخاطب}\nتحية طيبة وبعد،\n\nالموضوع: موعد المعاينة في الدعوى رقم {رقم_الدعوى} {نوع_الدعوى}\n\nبناءً على الحكم الصادر بندبنا خبيراً في الدعوى {رقم_الدعوى} {نوع_الدعوى} المقامة بين :\n\n{أطراف_الدعوى}\n\nنود أن نعلمكم أنه تم تحديد موعد المعاينة يوم {اليوم} الموافق لـ {التاريخ} على الساعة {الساعة}، وستكون المعاينة في {المكان}، ونطلب منكم حضوركم أو من تفوضونه للحضور نيابة عنكم مع تزويدنا بكتاب التفويض، وتسهيل دخولنا إلى الموقع.\n{رابط_الموقع}\n{ملاحظة}\n\nوتفضلوا بقبول فائق الاحترام والتقدير،\n{اسم_الخبير}",
   },
 };
 export const fillTpl = (t: string, v: Record<string, string>) =>
@@ -371,6 +313,6 @@ export function evMailVars(c: Case, e: Ev, office: OfficeInfo, addressees: Party
     المكان: where,
     رابط_الموقع: isUrl(place) ? (online ? "رابط الاجتماع: " : "رابط الموقع على الخريطة: ") + place : "",
     ملاحظة: e.note ? `ملاحظة: ${e.note}` : "",
-    اسم_الخبير: office.expertName ? `الخبير / ${office.expertName}` : "",
+    اسم_الخبير: signLine(office.specialty, office.expertName),
   };
 }

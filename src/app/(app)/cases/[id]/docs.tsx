@@ -2,41 +2,40 @@
 import { useMemo, useState } from "react";
 import type { Case, QLetter } from "@/lib/cases";
 import { fmtRef, regCode, type Ref } from "@/lib/refs";
-import { caseDocs, docVars, courtAddr, partyAddr, LETTERS, sideLabel, sideOfCase, type DocItem, type LetterKey, type OfficeInfo, type ProcRow } from "@/lib/docs";
-import { fillTemplate, saveBlob, safeName, DOCX_MIME } from "@/lib/docx";
-import { fmtD, normRole, srcOf, todayStr, caseRef } from "@/lib/format";
+import { caseDocs, LETTERS, sideLabel, type DocItem, type LetterKey, type OfficeInfo, type ProcRow } from "@/lib/docs";
+import { saveBlob, safeName } from "@/lib/docx";
+import { courtForm, documentsForm, minutesForm, questionsForm, reportForm, startForm, type Filled } from "@/lib/forms";
+import { currencyOf } from "@/lib/countries";
+import { makeForm } from "../form-loader";
+import { fmtD, srcOf, todayStr, caseRef } from "@/lib/format";
 import { Modal, inputCls } from "@/components/ui";
-import { getTemplate, logDoc } from "../doc-actions";
+import { logDoc } from "../doc-actions";
 import { issueRef } from "../../refs/actions";
 
 const panel = "rounded-2xl border border-line bg-white p-5";
 
-type Props = { c: Case; letters: QLetter[]; refs: Ref[]; prefix: string; office: OfficeInfo; procRows: ProcRow[]; canWrite: boolean; onQuestions: () => void };
+type Props = { c: Case; letters: QLetter[]; refs: Ref[]; prefix: string; office: OfficeInfo; procRows: ProcRow[]; canWrite: boolean; replyDays: number; onQuestions: () => void };
 
-export default function DocsPanel({ c, letters, refs, prefix, office, procRows, canWrite, onQuestions }: Props) {
+export default function DocsPanel({ c, letters, refs, prefix, office, procRows, canWrite, replyDays, onQuestions }: Props) {
   const docs = useMemo(() => caseDocs(c, letters, refs), [c, letters, refs]);
   const [pick, setPick] = useState<DocItem | null>(null);
   const [letter, setLetter] = useState<{ k: LetterKey; withRef: boolean } | null>(null);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
 
+  // every document is one of the platform's standard forms, unless the office uploaded its own template for it
   async function generate(d: DocItem, ref: string) {
     setBusy(d.key);
     setErr("");
     try {
-      if (d.kind === "q" && d.qLetter) {
-        const { qLetterVars } = await import("@/lib/docs");
-        const t = await getTemplate("questions", srcOf(c) || null);
-        if ("error" in t) throw new Error(t.error);
-        const v = qLetterVars(c, d.qLetter, ref, office);
-        saveBlob(safeName(`أسئلة الخبير ${normRole(d.party?.role)} ${c.case_no ?? ""} ${d.qLetter.letter_date}`) + ".docx", await fillTemplate(t.b64, v.vars, v.lists));
-      } else {
-        const v = docVars(c, d, ref, office, letters, procRows);
-        const t = await getTemplate(v.kind, srcOf(c) || null);
-        if ("error" in t) throw new Error(t.error);
-        const name = `${d.label}${d.party ? " " + d.party.name.split(" ").slice(0, 3).join(" ") : ""} ${c.case_no ?? ""}${d.ev ? " " + d.ev.date : ""}`;
-        saveBlob(safeName(name) + ".docx", await fillTemplate(t.b64, v.vars, v.lists));
-      }
+      let f: Filled;
+      if (d.kind === "q" && d.qLetter) f = questionsForm(c, d.qLetter, office, ref);
+      else if (d.kind === "start" && d.party) f = startForm(c, d.party, office, ref, replyDays);
+      else if (d.kind === "meet" || d.kind === "insp") f = minutesForm(c, d.ev, office, ref, d.party ? [d.party] : d.parties, d.kind === "insp" ? "inspection" : "meeting");
+      else if (d.kind === "receipt" || d.kind === "handover") f = documentsForm(d.kind, c, office);
+      else f = reportForm(c, office, ref, letters, procRows);
+      const name = `${d.label}${d.party ? " " + d.party.name.split(" ").slice(0, 3).join(" ") : ""} ${c.case_no ?? ""}${d.ev ? " " + d.ev.date : ""}`;
+      saveBlob(safeName(name) + ".docx", await makeForm(f, srcOf(c) || null, office.country));
       await logDoc(c.id, `أنشأ ${d.label} (Word)`, (ref ? ref + " · " : "") + d.sub);
     } catch (e) {
       setErr((e as Error).message || "تعذّر إنشاء الملف.");
@@ -108,49 +107,36 @@ export default function DocsPanel({ c, letters, refs, prefix, office, procRows, 
         </Modal>
       )}
       {letter && (
-        <LetterModal c={c} k={letter.k} withRef={letter.withRef} office={office} onClose={() => setLetter(null)} />
+        <LetterModal c={c} k={letter.k} withRef={letter.withRef} office={office} letters={letters} procRows={procRows} onClose={() => setLetter(null)} />
       )}
     </section>
   );
 }
 
-function LetterModal({ c, k, withRef, office, onClose }: { c: Case; k: LetterKey; withRef: boolean; office: OfficeInfo; onClose: () => void }) {
+// 05 / 06 / 07: the details the court letter needs; the wording is the platform's standard form
+function LetterModal({ c, k, withRef, office, letters, procRows, onClose }: { c: Case; k: LetterKey; withRef: boolean; office: OfficeInfo; letters: QLetter[]; procRows: ProcRow[]; onClose: () => void }) {
   const L = LETTERS[k];
+  const kind = k === "deposit" ? "deposit" : k === "both" ? "both" : "postpone";
   const hearings = c.events.filter((e) => e.type === "جلسة").map((e) => e.date).sort();
   const nextH = hearings.find((d) => d >= todayStr()) ?? "";
-  const needH = k === "postpone" || k === "both", needA = k === "deposit" || k === "both", needR = k !== "start";
-  const [to, setTo] = useState("court");
-  const [o, setO] = useState({ date: todayStr(), hearing: nextH, period: "", amount: "", payer: sideLabel(c, 1), reason: "" });
-  const [subject, setSubject] = useState(L.subj(c));
-  const [body, setBody] = useState(L.body(c, o));
-  const [edited, setEdited] = useState(false);
+  const needH = kind !== "deposit", needA = kind !== "postpone";
+  const cur = currencyOf(office.country);
+  const [o, setO] = useState({ date: todayStr(), hearing: nextH, period: "", amount: "", payer: sideLabel(c, 1), reason: "", reasonDep: "", reasons: "" });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const set = (k2: keyof typeof o, v: string) => {
-    const n = { ...o, [k2]: v };
-    setO(n);
-    if (!edited) setBody(L.body(c, n));
-  };
-  const sides = [...sideOfCase(c, 1), ...sideOfCase(c, 2)];
+  const set = (k2: keyof typeof o, v: string) => setO({ ...o, [k2]: v });
   async function create() {
-    if (!body.trim()) return setErr("نص الكتاب فارغ.");
     setBusy(true);
+    setErr("");
     try {
       let ref = "";
       if (withRef) {
-        const r = await issueRef(c.id, L.cat, `${L.label}`, null);
+        const r = await issueRef(c.id, L.cat, L.label, null);
         if (r?.ok) ref = r.ref!;
       }
-      const a = to === "court" ? courtAddr(c) : partyAddr(sides.find((p) => p.id === to)!, !!sides.find((p) => p.id === to)?.lawyer);
-      const t = await getTemplate("letter", srcOf(c) || null);
-      if ("error" in t) throw new Error(t.error);
-      const blob = await fillTemplate(
-        t.b64,
-        { DATE: fmtD(o.date), REF: ref || "……………", TITLE: a.title, NAME: a.name, HONOR: a.honor, AGENT: a.agent, SUBJECT: subject, EXPERT: office.expertName },
-        { BODY: body.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean).flatMap((x) => x.split("\n")) }
-      );
-      saveBlob(safeName(`${L.label} ${c.case_no ?? ""} ${o.date}`) + ".docx", new Blob([blob], { type: DOCX_MIME }));
-      await logDoc(c.id, `أنشأ ${L.label} (Word)`, (ref ? ref + " · " : "") + subject);
+      const f = courtForm(kind, c, office, ref, { ...o, reasons: o.reasons.split("\n").map((x) => x.trim()).filter(Boolean) }, letters, procRows);
+      saveBlob(safeName(`${L.label} ${c.case_no ?? ""} ${o.date}`) + ".docx", await makeForm(f, srcOf(c) || null, office.country));
+      await logDoc(c.id, `أنشأ ${L.label} (Word)`, ref || fmtD(o.date));
       onClose();
     } catch (e) {
       setErr((e as Error).message);
@@ -158,66 +144,64 @@ function LetterModal({ c, k, withRef, office, onClose }: { c: Case; k: LetterKey
     }
   }
   return (
-    <Modal title={L.label} onClose={onClose} width="max-w-3xl">
+    <Modal title={L.label} onClose={onClose} width="max-w-2xl">
+      <p className="mb-3 text-sm text-muted">
+        موجَّه إلى {c.authority || "المحكمة"}{c.circuit ? " — " + c.circuit : ""}. اكتب التفاصيل، وتُدرج في النموذج القياسي، ويمكنك تعديل الملف في Word بعد تنزيله.
+      </p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block text-sm">
-          <span className="text-muted">موجَّه إلى</span>
-          <select value={to} onChange={(e) => setTo(e.target.value)} className={inputCls}>
-            <option value="court">{c.authority || "المحكمة"}{c.circuit ? " — " + c.circuit : ""}</option>
-            {sides.map((p) => (
-              <option key={p.id} value={p.id}>{normRole(p.role)}: {p.name}</option>
-            ))}
-          </select>
-        </label>
         <label className="block text-sm">
           <span className="text-muted">تاريخ الكتاب</span>
           <input type="date" value={o.date} onChange={(e) => set("date", e.target.value)} className={inputCls} />
         </label>
         {needH && (
-          <>
-            <label className="block text-sm">
-              <span className="text-muted">الجلسة المطلوب تأجيلها</span>
-              <input type="date" value={o.hearing} onChange={(e) => set("hearing", e.target.value)} className={inputCls} />
-            </label>
-            <label className="block text-sm">
-              <span className="text-muted">مدة التأجيل المطلوبة</span>
-              <input value={o.period} onChange={(e) => set("period", e.target.value)} placeholder="مثال: شهر واحد" className={inputCls} />
-            </label>
-          </>
-        )}
-        {needA && (
-          <>
-            <label className="block text-sm">
-              <span className="text-muted">الأمانة المطلوبة (ر.ق)</span>
-              <input inputMode="numeric" dir="ltr" value={o.amount} onChange={(e) => set("amount", e.target.value.replace(/[^\d]/g, ""))} className={inputCls + " text-right"} />
-            </label>
-            <label className="block text-sm">
-              <span className="text-muted">يُلزم بالسداد</span>
-              <select value={o.payer} onChange={(e) => set("payer", e.target.value)} className={inputCls}>
-                {[...new Set([sideLabel(c, 1), sideLabel(c, 2)])].map((x) => <option key={x}>{x}</option>)}
-                <option>الطرفين مناصفة</option>
-              </select>
-            </label>
-          </>
-        )}
-        {needR && (
-          <label className="block text-sm sm:col-span-2">
-            <span className="text-muted">السبب (يُدرج في النص)</span>
-            <input value={o.reason} onChange={(e) => set("reason", e.target.value)} placeholder="مثال: لعدم ورود ردود الأطراف على أسئلة الخبير حتى تاريخه" className={inputCls} />
+          <label className="block text-sm">
+            <span className="text-muted">الجلسة المحددة لنظر الدعوى</span>
+            <input type="date" value={o.hearing} onChange={(e) => set("hearing", e.target.value)} className={inputCls} />
           </label>
         )}
-        <label className="block text-sm sm:col-span-2">
-          <span className="text-muted">الموضوع</span>
-          <input value={subject} onChange={(e) => setSubject(e.target.value)} className={inputCls} />
-        </label>
-        <label className="block text-sm sm:col-span-2">
-          <span className="text-muted">نص الكتاب (يمكنك تعديله قبل الإنشاء)</span>
-          <textarea rows={9} value={body} onChange={(e) => { setBody(e.target.value); setEdited(true); }} className={inputCls + " leading-7"} />
-        </label>
+        {needH && (
+          <label className="block text-sm">
+            <span className="text-muted">مدة التأجيل المطلوبة</span>
+            <input value={o.period} onChange={(e) => set("period", e.target.value)} placeholder="مثال: شهر واحد" className={inputCls} />
+          </label>
+        )}
+        {needA && (
+          <label className="block text-sm">
+            <span className="text-muted">الأمانة المقترحة ({cur[1]})</span>
+            <input inputMode="numeric" dir="ltr" value={o.amount} onChange={(e) => set("amount", e.target.value.replace(/[^\d]/g, ""))} className={inputCls + " text-right"} />
+          </label>
+        )}
+        {needA && (
+          <label className="block text-sm">
+            <span className="text-muted">يُلزم بسداد الفرق</span>
+            <select value={o.payer} onChange={(e) => set("payer", e.target.value)} className={inputCls}>
+              {[...new Set([sideLabel(c, 1), sideLabel(c, 2)])].map((x) => <option key={x}>{x}</option>)}
+              <option>الطرفين مناصفة</option>
+            </select>
+          </label>
+        )}
+        {kind !== "deposit" && (
+          <label className="block text-sm sm:col-span-2">
+            <span className="text-muted">{kind === "both" ? "سبب آخر للتأجيل غير الأمانة (اختياري)" : "سبب التأجيل"}</span>
+            <input value={o.reason} onChange={(e) => set("reason", e.target.value)} placeholder="مثال: عدم اكتمال المستندات المطلوبة من الأطراف" className={inputCls} />
+          </label>
+        )}
+        {kind === "deposit" && (
+          <label className="block text-sm sm:col-span-2">
+            <span className="text-muted">أسباب إعادة التقدير (سبب في كل سطر)</span>
+            <textarea rows={4} value={o.reasons} onChange={(e) => set("reasons", e.target.value)} placeholder={"كبر حجم المستندات المطلوب فحصها\nحاجة المأمورية إلى معاينات ميدانية متعددة"} className={inputCls + " leading-7"} />
+          </label>
+        )}
+        {kind === "both" && (
+          <label className="block text-sm sm:col-span-2">
+            <span className="text-muted">أسباب إعادة تقدير الأمانة</span>
+            <input value={o.reasonDep} onChange={(e) => set("reasonDep", e.target.value)} placeholder="مثال: كبر حجم المستندات وتعدد بنود المأمورية" className={inputCls} />
+          </label>
+        )}
       </div>
       {withRef && <p className="mt-2 text-xs text-muted">سيصدر رقم مرجعي ({L.cat} · {regCode(L.cat)}) عند الإنشاء.</p>}
       {err && <p className="mt-2 text-sm text-red-700">{err}</p>}
-      <button disabled={busy} onClick={create} className="mt-4 rounded-lg bg-ink hover:bg-ink-hover px-6 py-2 font-semibold text-white disabled:opacity-60">
+      <button disabled={busy} onClick={create} className="mt-4 rounded-lg bg-ink px-6 py-2 font-semibold text-white hover:bg-ink-hover disabled:opacity-60">
         {busy ? "جارٍ الإنشاء…" : "إنشاء الكتاب (Word)"}
       </button>
     </Modal>

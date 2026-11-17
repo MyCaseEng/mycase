@@ -58,3 +58,13 @@ export const themeVars = (code?: string | null) => {
     "--gold-soft": `color-mix(in srgb, ${t.accent} 11%, white)`,
   } as React.CSSProperties;
 };
+
+// Currency per country: full name for letters, short sign for screens.
+export const CURRENCY: Record<string, [name: string, sign: string]> = {
+  QA: ["ريال قطري", "ر.ق"], AE: ["درهم إماراتي", "د.إ"], SA: ["ريال سعودي", "ر.س"], KW: ["دينار كويتي", "د.ك"], BH: ["دينار بحريني", "د.ب"],
+  OM: ["ريال عماني", "ر.ع"], JO: ["دينار أردني", "د.أ"], EG: ["جنيه مصري", "ج.م"], IQ: ["دينار عراقي", "د.ع"], SY: ["ليرة سورية", "ل.س"],
+  LB: ["ليرة لبنانية", "ل.ل"], PS: ["شيكل", "ش"], YE: ["ريال يمني", "ر.ي"], SD: ["جنيه سوداني", "ج.س"], LY: ["دينار ليبي", "د.ل"],
+  TN: ["دينار تونسي", "د.ت"], DZ: ["دينار جزائري", "د.ج"], MA: ["درهم مغربي", "د.م"], MR: ["أوقية موريتانية", "أوقية"], SO: ["شلن صومالي", "شلن"],
+  DJ: ["فرنك جيبوتي", "فرنك"], KM: ["فرنك قمري", "فرنك"], TR: ["ليرة تركية", "ل.ت"],
+};
+export const currencyOf = (code?: string | null) => CURRENCY[validCountry(code)] ?? CURRENCY[DEFAULT_COUNTRY];
