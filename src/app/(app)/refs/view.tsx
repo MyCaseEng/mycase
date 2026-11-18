@@ -25,6 +25,11 @@ export default function RefsView({ rows, cases, canWrite }: { rows: RefRow[]; ca
   const [year, setYear] = useState<number | "">(years[0] ?? "");
   const [cat, setCat] = useState("");
   const [q, setQ] = useState("");
+  const [kase, setKase] = useState("");
+  const [by, setBy] = useState("");
+  const [st, setSt] = useState<"" | "on" | "off">("");
+  const issuers = [...new Set(rows.map((r) => r.by).filter(Boolean))].sort();
+  const filtered = !!(cat || q || kase || by || st);
   const [res, action, pending] = useActionState<IssueRes, FormData>(issueFromForm, null);
   const [, start] = useTransition();
   const list = useMemo(
@@ -33,9 +38,12 @@ export default function RefsView({ rows, cases, canWrite }: { rows: RefRow[]; ca
         (r) =>
           (!year || r.year === year) &&
           (!cat || r.category === cat) &&
+          (!kase || (kase === "-" ? !r.caseId : r.caseId === kase)) &&
+          (!by || r.by === by) &&
+          (!st || (st === "off") === r.cancelled) &&
           (!q || [r.ref, r.title, r.caseLabel, r.category].join(" ").includes(q.trim()))
       ),
-    [rows, year, cat, q]
+    [rows, year, cat, q, kase, by, st]
   );
   return (
     <div className="space-y-4">
@@ -76,7 +84,46 @@ export default function RefsView({ rows, cases, canWrite }: { rows: RefRow[]; ca
             <option key={k}>{k}</option>
           ))}
         </select>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="بحث" className="min-w-48 flex-1 rounded-lg border border-line bg-white px-3 py-2" />
+        <select value={kase} onChange={(e) => setKase(e.target.value)} className="max-w-64 rounded-lg border border-line bg-white px-3 py-2">
+          <option value="">كل الدعاوى</option>
+          <option value="-">بدون دعوى</option>
+          {cases.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.label}
+            </option>
+          ))}
+        </select>
+        <select value={by} onChange={(e) => setBy(e.target.value)} className="rounded-lg border border-line bg-white px-3 py-2">
+          <option value="">كل الموظفين</option>
+          {issuers.map((n) => (
+            <option key={n}>{n}</option>
+          ))}
+        </select>
+        <select value={st} onChange={(e) => setSt(e.target.value as "" | "on" | "off")} className="rounded-lg border border-line bg-white px-3 py-2">
+          <option value="">فعّال وملغى</option>
+          <option value="on">فعّال فقط</option>
+          <option value="off">ملغى فقط</option>
+        </select>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="بحث بالرقم أو الوصف أو الدعوى" className="min-w-48 flex-1 rounded-lg border border-line bg-white px-3 py-2" />
+      </div>
+      <div className="flex items-center gap-3 text-sm text-muted">
+        <span>
+          {list.length} رقم{list.some((r) => r.cancelled) ? ` · منها ${list.filter((r) => r.cancelled).length} ملغى` : ""}
+        </span>
+        {filtered && (
+          <button
+            onClick={() => {
+              setCat("");
+              setQ("");
+              setKase("");
+              setBy("");
+              setSt("");
+            }}
+            className="text-brand hover:underline"
+          >
+            مسح التصفية
+          </button>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-line bg-white">
@@ -119,7 +166,7 @@ export default function RefsView({ rows, cases, canWrite }: { rows: RefRow[]; ca
             {!list.length && (
               <tr>
                 <td colSpan={6} className="px-3 py-10 text-center text-muted">
-                  لا توجد أرقام بعد.
+                  {rows.length ? "لا أرقام تطابق التصفية." : "لا توجد أرقام بعد."}
                 </td>
               </tr>
             )}

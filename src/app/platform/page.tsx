@@ -3,7 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { BRAND } from "@/lib/brand";
-import { OfficeActions, TicketReply } from "./controls";
+import { OfficeActions, TicketReply, SubscriptionCell } from "./controls";
+import type { Sub } from "@/lib/subscription";
 import { KIND_LABEL, pageLabel } from "@/lib/support";
 import { signFiles } from "@/lib/support-actions";
 import { Attachments } from "@/components/support";
@@ -56,7 +57,19 @@ async function Platform() {
   const { data: owner } = await supabase.rpc("is_platform_admin");
   if (!owner) notFound();
   const { data: mine } = await supabase.from("members").select("office_id").eq("user_id", cl.claims.sub).eq("is_active", true).limit(1);
-  const [{ data, error }, { data: tk }] = await Promise.all([supabase.rpc("platform_offices"), supabase.rpc("platform_tickets")]);
+  const [{ data, error }, { data: tk }, kp, sb, us] = await Promise.all([
+    supabase.rpc("platform_offices"),
+    supabase.rpc("platform_tickets"),
+    supabase.rpc("platform_kpis"),
+    supabase.rpc("platform_subscriptions"),
+    supabase.rpc("platform_usage", { p_days: 30 }),
+  ]);
+  // subscriptions and the business numbers come with update 0022; the page still works without them
+  type K = { active_offices: number; users: number; active_users: number; trial: number; paying: number; late: number; cancelled_30: number };
+  type U = { day: string; actions: number; users: number; offices: number; new_cases: number };
+  const kpi = kp.error ? null : ((kp.data ?? [])[0] as K | undefined) ?? null;
+  const subs = new Map(((sb.error ? [] : sb.data ?? []) as Sub[]).map((x) => [x.office_id, { ...x, price: x.price === null ? null : Number(x.price), paid_total: Number(x.paid_total) }]));
+  const usage = us.error ? [] : ((us.data ?? []) as U[]);
   if (error) throw new Error(error.message);
   type T = { id: string; office_name: string | null; user_name: string | null; user_email: string | null; kind: string; subject: string; body: string; page: string | null; status: string; reply: string | null; replied_at: string | null; created_at: string; files: string[] };
   const tickets = await Promise.all(((tk ?? []) as T[]).map(async (x) => ({ ...x, atts: await signFiles(x.files ?? []) })));
@@ -81,6 +94,19 @@ async function Platform() {
     [rows.reduce((n, r) => n + r.imports, 0), "قراءة PDF بالذكاء الاصطناعي"],
     [openTickets.length, "رسالة دعم بانتظار الرد"],
   ];
+  const churn = kpi && kpi.paying + kpi.cancelled_30 ? Math.round((kpi.cancelled_30 / (kpi.paying + kpi.cancelled_30)) * 100) : 0;
+  const biz: [string | number, string, string?][] = kpi
+    ? [
+        [kpi.active_offices, "مكتب نشط (30 يومًا)"],
+        [kpi.trial, "مكتب في الفترة التجريبية"],
+        [kpi.paying, "اشتراك نشط", "text-emerald-700"],
+        [kpi.late, "اشتراك متأخر", kpi.late ? "text-red-700" : undefined],
+        [`${churn}٪`, "معدل الإلغاء (30 يومًا)", churn ? "text-amber-700" : undefined],
+        [`${kpi.active_users} / ${kpi.users}`, "مستخدم نشط (30 يومًا)"],
+      ]
+    : [];
+  const sum = (k: keyof U) => usage.reduce((n, u) => n + Number(u[k]), 0);
+  const peak = Math.max(1, ...usage.map((u) => u.actions));
   const byCountry = Object.entries(
     rows.reduce<Record<string, number>>((m, r) => ((m[r.country] = (m[r.country] ?? 0) + 1), m), {})
   ).sort((a, b) => b[1] - a[1]);
@@ -113,6 +139,44 @@ async function Platform() {
         </p>
       </div>
 
+      {kpi ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+          {biz.map(([n, l, tone]) => (
+            <div key={l} className="rounded-xl border border-line bg-white p-4">
+              <div className={`font-display text-2xl font-bold tabular-nums ${tone ?? ""}`}>{n}</div>
+              <div className="text-xs text-muted">{l}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">لتظهر الاشتراكات ومؤشراتها، شغّل ملف تحديث قاعدة البيانات 0022.</p>
+      )}
+
+      {usage.length > 0 && (
+        <section className="rounded-xl border border-line bg-white p-4">
+          <div className="mb-3 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+            <h2 className="font-semibold">استخدام المنصة · آخر 30 يومًا</h2>
+            <span className="text-sm text-muted">
+              {sum("actions").toLocaleString("en")} عملية · {sum("new_cases")} دعوى جديدة · متوسط {Math.round(sum("users") / usage.length * 10) / 10} مستخدم يوميًا
+            </span>
+          </div>
+          <div className="flex h-32 items-end gap-[3px]" dir="ltr">
+            {usage.map((u) => (
+              <div key={u.day} className="group relative flex h-full flex-1 flex-col justify-end">
+                <div className="rounded-t bg-brand/80 group-hover:bg-brand" style={{ height: `${Math.max(u.actions ? 3 : 0, (u.actions / peak) * 100)}%` }} />
+                <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-[11px] text-white group-hover:block" dir="rtl">
+                  {fmtD(u.day)} · {u.actions} عملية · {u.users} مستخدم · {u.offices} مكتب
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-1 flex justify-between text-[11px] text-muted" dir="ltr">
+            <span>{fmtD(usage[0].day)}</span>
+            <span>{fmtD(usage[usage.length - 1].day)}</span>
+          </div>
+        </section>
+      )}
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
         {tiles.map(([n, l]) => (
           <div key={l} className="rounded-xl border border-line bg-white p-4">
@@ -138,7 +202,7 @@ async function Platform() {
         <table className="w-full text-sm">
           <thead className="bg-background text-right text-xs text-muted">
             <tr>
-              {["المكتب", "الدولة", "التخصص", "المدير", "تاريخ الإنشاء", "الأعضاء", "الدعاوى (المفتوحة)", "قراءات PDF", "آخر نشاط", "آخر دخول", ""].map((h) => (
+              {["المكتب", "الاشتراك", "الدولة", "التخصص", "المدير", "تاريخ الإنشاء", "الأعضاء", "الدعاوى (المفتوحة)", "قراءات PDF", "آخر نشاط", "آخر دخول", ""].map((h) => (
                 <th key={h} className="whitespace-nowrap px-3 py-2.5 font-medium">
                   {h}
                 </th>
@@ -148,10 +212,13 @@ async function Platform() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className={`border-t border-line align-top ${r.is_active ? "" : "bg-red-50/50"}`}>
-                <td className="px-3 py-2.5">
+                <td className="min-w-48 px-3 py-2.5">
                   <b>{r.name}</b>
                   {r.expert_name && <div className="text-xs text-muted">{r.expert_name}</div>}
                   {!r.is_active && <span className="text-xs text-red-700">موقوف</span>}
+                </td>
+                <td className="px-3 py-2.5">
+                  <SubscriptionCell sub={subs.get(r.id) ?? null} office={r.id} />
                 </td>
                 <td className="whitespace-nowrap px-3 py-2.5">
                   <span className="flex items-center gap-1.5">
@@ -191,7 +258,7 @@ async function Platform() {
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={11} className="px-3 py-6 text-center text-muted">
+                <td colSpan={12} className="px-3 py-6 text-center text-muted">
                   لا توجد مكاتب بعد.
                 </td>
               </tr>

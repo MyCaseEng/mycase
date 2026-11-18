@@ -25,7 +25,7 @@ const TILE: Record<Tone, string> = {
   none: "border-line bg-white",
 };
 
-export default function LifeBoard({ rows }: { rows: LifeRow[] }) {
+export default function LifeBoard({ rows, bare }: { rows: LifeRow[]; bare?: boolean }) {
   const [step, setStep] = useState<number | null>(null);
   // steps 1..6 can be "current"; the first (receiving the judgment) is done the moment the case is added
   const tiles = STEPS.map((name, i) => {
@@ -38,9 +38,9 @@ export default function LifeBoard({ rows }: { rows: LifeRow[] }) {
     .sort((a, b) => RANK[a.tone] - RANK[b.tone] || a.cur - b.cur);
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-4">
+    <section className={bare ? "p-2" : "rounded-2xl border border-line bg-white p-4"}>
       <div className="mb-3 flex items-baseline gap-2">
-        <h2 className="flex-1 font-semibold">دورة حياة الدعاوى</h2>
+        <h2 className="flex-1 font-semibold">{bare ? "" : "دورة حياة الدعاوى"}</h2>
         {step !== null && (
           <button onClick={() => setStep(null)} className="text-sm text-brand hover:underline">
             عرض الكل ({rows.length})
