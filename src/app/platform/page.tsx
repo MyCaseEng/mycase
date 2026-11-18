@@ -100,7 +100,7 @@ async function Platform() {
         [kpi.active_offices, "مكتب نشط (30 يومًا)"],
         [kpi.trial, "مكتب في الفترة التجريبية"],
         [kpi.paying, "اشتراك نشط", "text-emerald-700"],
-        [kpi.late, "اشتراك متأخر", kpi.late ? "text-red-700" : undefined],
+        [kpi.late, "بانتظار التجديد (سماح أو قراءة فقط)", kpi.late ? "text-red-700" : undefined],
         [`${churn}٪`, "معدل الإلغاء (30 يومًا)", churn ? "text-amber-700" : undefined],
         [`${kpi.active_users} / ${kpi.users}`, "مستخدم نشط (30 يومًا)"],
       ]

@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { TERMS_VERSION } from "@/lib/terms";
 import { isStaffEmail } from "@/lib/staff";
+import { officeSub, type OfficeSub, type Sub } from "@/lib/subscription";
+import { todayStr } from "@/lib/format";
 
 export type Role = "admin" | "member" | "viewer";
 export type Ctx = {
@@ -11,8 +13,10 @@ export type Ctx = {
   email: string;
   officeId: string;
   officeName: string;
-  role: Role;
+  role: Role; // "viewer" for everyone while the subscription is read-only
+  realRole: Role;
   displayName: string;
+  sub: OfficeSub | null; // null until update 0022 exists
 };
 
 // Current user + office for every page in the app. Joins pending invitations first.
@@ -61,13 +65,19 @@ export const getCtx = cache(async (): Promise<Ctx> => {
     redirect(owner ? "/platform" : "/welcome");
   }
   const office = m.offices as unknown as { name: string } | null;
+  const { data: sr, error: se } = await supabase.from("subscriptions").select("trial_ends, paid_until, cancelled_at").eq("office_id", m.office_id).maybeSingle();
+  const sub = se || !sr ? null : officeSub(sr as Sub, todayStr());
+  // after the grace period the office is read-only until renewal (the database enforces the same rule)
+  const role = sub?.phase === "locked" ? "viewer" : (m.role as Role);
   return {
     userId,
     email: claims.email ?? "",
     officeId: m.office_id,
     officeName: office?.name ?? "",
-    role: m.role as Role,
+    role,
+    realRole: m.role as Role,
     displayName: m.display_name,
+    sub,
   };
 });
 
