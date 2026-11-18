@@ -180,6 +180,20 @@ export async function loadBoard(officeId: string) {
   return { cases, lettersOf, snoozes };
 }
 
+
+// for the home life-cycle line: issued document types and uploaded signed reports (tolerant: tables may be missing)
+export async function loadLifeExtra(officeId: string) {
+  const supabase = await createClient();
+  const [refs, finals] = await Promise.all([
+    supabase.from("ref_numbers").select("case_id, category").eq("office_id", officeId).eq("status", "فعال").then((r) => (r.data ?? []) as { case_id: string | null; category: string }[]),
+    supabase.from("case_final").select("case_id, report_path").eq("office_id", officeId).then((r) => (r.error ? [] : (r.data ?? []) as { case_id: string; report_path: string | null }[])),
+  ]);
+  return (id: string) => ({
+    refCats: refs.filter((r) => r.case_id === id).map((r) => r.category),
+    reportFile: finals.some((f) => f.case_id === id && !!f.report_path),
+  });
+}
+
 export const caseLabel = (c: Pick<Case, "case_no" | "case_type" | "parties">) =>
   c.case_no
     ? `${c.case_no.trim()} ${c.case_type ?? ""}`.trim()

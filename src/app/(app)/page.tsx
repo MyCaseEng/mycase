@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { getCtx } from "@/lib/office";
-import { loadBoard, caseLabel, sideOf, isDelivered, type Case } from "@/lib/cases";
-import { caseAlerts, caseStage, STAGES, LEVEL_ORDER, type Stage, type Alert } from "@/lib/alerts";
+import { loadBoard, loadLifeExtra, caseLabel, sideOf, isDelivered, type Case } from "@/lib/cases";
+import { caseAlerts, LEVEL_ORDER, type Alert } from "@/lib/alerts";
+import { caseLife } from "@/lib/lifecycle";
+import LifeBoard, { type LifeRow } from "./life-board";
 import { fmtD, inDays, dayDiff, todayStr, normCaseNo } from "@/lib/format";
-import { AlertLine, DOT } from "@/components/alerts-ui";
+import { AlertLine } from "@/components/alerts-ui";
 
 const WEEKDAY = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 const wd = (d: string) => WEEKDAY[new Date(d + "T00:00:00Z").getUTCDay()];
@@ -16,7 +18,7 @@ const TYPE_TONE: Record<string, string> = { اجتماع: "bg-gold-soft text-gol
 
 export default async function Home() {
   const ctx = await getCtx();
-  const { cases, lettersOf, snoozes } = await loadBoard(ctx.officeId);
+  const [{ cases, lettersOf, snoozes }, extraOf] = await Promise.all([loadBoard(ctx.officeId), loadLifeExtra(ctx.officeId)]);
   const t = todayStr();
   const active = cases.filter((c) => !isDelivered(c));
   const label = (c: (typeof cases)[number]) => caseLabel({ ...c, case_no: c.case_no ? normCaseNo(c.case_no) : null });
@@ -41,8 +43,12 @@ export default async function Home() {
   });
   const alertGroups = [...byCase.values()];
 
-  const stages = new Map<Stage, typeof active>(STAGES.map(([k]) => [k, []]));
-  active.forEach((c) => stages.get(caseStage(c, lettersOf(c.id)))!.push(c));
+  const lifeRows: LifeRow[] = active.map((c) => ({
+    id: c.id,
+    label: label(c),
+    party: [sideOf(c, 1)[0]?.name, sideOf(c, 2)[0]?.name].filter(Boolean).join(" ضد "),
+    ...caseLife(c, lettersOf(c.id), extraOf(c.id), snoozes),
+  }));
 
   const tiles: [number, string, string?][] = [
     [active.length, "دعوى نشطة", "/cases"],
@@ -150,41 +156,7 @@ export default async function Home() {
       </aside>
       </div>
 
-      {/* kanban: where each active case stands */}
-      <section>
-        <h2 className="mb-3 font-semibold">لوحة سير الدعاوى</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {STAGES.map(([k, title, sub]) => {
-            const list = stages.get(k)!;
-            if (k === "old" && !list.length) return null;
-            return (
-              <div key={k} className="rounded-2xl bg-white p-3 ring-1 ring-line">
-                <div className="flex items-baseline gap-2">
-                  <h3 className="flex-1 text-sm font-semibold">{title}</h3>
-                  <span className="text-sm font-bold text-brand">{list.length}</span>
-                </div>
-                <div className="mb-2 text-xs text-muted">{sub}</div>
-                <div className="space-y-2">
-                  {list.map((c) => {
-                    const al = caseAlerts(c, lettersOf(c.id), snoozes);
-                    const worst = al.sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level])[0];
-                    return (
-                      <Link key={c.id} href={`/cases/${c.id}`} className="block rounded-xl border border-line p-2 text-xs hover:border-brand">
-                        <div className="flex items-start gap-1.5">
-                          {worst && worst.level !== "calm" && <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${DOT[worst.level]}`} />}
-                          <b className="leading-5">{label(c)}</b>
-                        </div>
-                        <div className="mt-0.5 truncate text-muted">{sideOf(c, 1)[0]?.name ?? ""}</div>
-                      </Link>
-                    );
-                  })}
-                  {!list.length && <div className="text-xs text-muted">—</div>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <LifeBoard rows={lifeRows} />
     </div>
   );
 }
