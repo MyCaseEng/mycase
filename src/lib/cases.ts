@@ -184,6 +184,16 @@ export async function loadBoard(officeId: string) {
 }
 
 
+// for the home "start here" list: is there a team, and has a reference number been issued
+export async function loadStartFacts(officeId: string) {
+  const supabase = await createClient();
+  const [m, r] = await Promise.all([
+    supabase.from("members").select("user_id", { count: "exact", head: true }).eq("office_id", officeId),
+    supabase.from("ref_numbers").select("id", { count: "exact", head: true }).eq("office_id", officeId),
+  ]);
+  return { members: m.count ?? 1, refs: r.count ?? 0 };
+}
+
 // for the home life-cycle line: issued document types and uploaded signed reports (tolerant: tables may be missing)
 export async function loadLifeExtra(officeId: string) {
   const supabase = await createClient();

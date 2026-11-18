@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { getCtx } from "@/lib/office";
-import { loadBoard, loadLifeExtra, caseLabel, sideOf, isDelivered, type Case } from "@/lib/cases";
+import { loadBoard, loadLifeExtra, loadStartFacts, caseLabel, sideOf, isDelivered, type Case } from "@/lib/cases";
 import { caseAlerts, type Alert } from "@/lib/alerts";
 import { caseLife } from "@/lib/lifecycle";
 import LifeBoard, { type LifeRow } from "./life-board";
+import StartHere, { type StartStep } from "./start-here";
 import { fmtD, inDays, dayDiff, todayStr, normCaseNo, days as days_ } from "@/lib/format";
 import { AlertLine } from "@/components/alerts-ui";
 
@@ -22,7 +23,7 @@ const isReplyKey = (k: string) => k.startsWith("qlate|") || k.startsWith("qdue|"
 // and what is coming in the next 14 days. Each line has its action; when the work is done the line goes away.
 export default async function Home() {
   const ctx = await getCtx();
-  const [{ cases, lettersOf, snoozes }, extraOf] = await Promise.all([loadBoard(ctx.officeId), loadLifeExtra(ctx.officeId)]);
+  const [{ cases, lettersOf, snoozes }, extraOf, facts] = await Promise.all([loadBoard(ctx.officeId), loadLifeExtra(ctx.officeId), loadStartFacts(ctx.officeId)]);
   const t = todayStr();
   const canWrite = ctx.role !== "viewer";
   const active = cases.filter((c) => !isDelivered(c));
@@ -56,6 +57,16 @@ export default async function Home() {
     .flatMap((c) => lettersOf(c.id).filter((l) => l.sent_at && l.reply_type !== "full").map((l) => ({ c, l, dd: l.due ? dayDiff(l.due) : null })))
     .sort((a, b) => (a.dd ?? 999) - (b.dd ?? 999));
 
+  const sample = cases.find((c) => c.is_sample);
+  const start: StartStep[] = [
+    { key: "office", label: "أنشئ مكتبك", href: "/settings", guide: "home", done: true },
+    { key: "sample", label: "افتح الدعوى النموذجية وتجوّل فيها", href: sample ? `/cases/${sample.id}` : "/cases", guide: "home", done: sample ? "local" : true },
+    { key: "case", label: "أضف أول دعوى حقيقية", href: "/cases/new", guide: "cases", done: cases.some((c) => !c.is_sample) },
+    ...(ctx.realRole === "admin" ? [{ key: "team", label: "أضف فريقك", href: "/team", guide: "team", done: facts.members > 1 } as StartStep] : []),
+    { key: "ref", label: "أصدر أول رقم مرجعي", href: "/refs", guide: "refs", done: facts.refs > 0 },
+    { key: "doc", label: "ولّد أول محضر أو خطاب Word", href: sample ? `/cases/${sample.id}` : "/cases", guide: "docs", done: "local" },
+  ];
+
   const lifeRows: LifeRow[] = active.map((c) => ({
     id: c.id,
     label: label(c),
@@ -74,6 +85,7 @@ export default async function Home() {
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
         <div className="min-w-0 space-y-5">
+          {ctx.officeAgeDays < 30 && <StartHere steps={start} />}
           <Board tone="red" title="متأخر — ابدأ به" count={late.reduce((n, g) => n + g.list.length, 0)} empty="لا شيء متأخر.">
             <AlertGroups groups={late} label={label} canWrite={canWrite} />
           </Board>

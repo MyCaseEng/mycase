@@ -20,6 +20,7 @@ export type Ctx = {
   // the expert has explored the platform for 24 hours and has not yet chosen the free trial or a subscription
   askStart: boolean;
   exploring: boolean; // first 24 hours, before that choice
+  officeAgeDays: number;
 };
 
 // Current user + office for every page in the app. Joins pending invitations first.
@@ -86,6 +87,7 @@ export const getCtx = cache(async (): Promise<Ctx> => {
     sub,
     askStart: notChosen && m.role === "admin" && ageH >= 24,
     exploring: notChosen && ageH < 24,
+    officeAgeDays: Math.floor(ageH / 24),
   };
 });
 

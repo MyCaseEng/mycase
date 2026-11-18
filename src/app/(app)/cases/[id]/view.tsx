@@ -1,5 +1,5 @@
 "use client";
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import type { Case, Ev, Member, Note, Party, QLetter } from "@/lib/cases";
 import type { Ref } from "@/lib/refs";
@@ -30,6 +30,10 @@ const btn = "rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-backgrou
 
 export default function CaseView({ officeId, c, members, notes, letters, alerts, refs, settings, office, procRows, canWrite, bundle }: P) {
   const nums = bundle ? bundleNumbers(c, bundle.items) : undefined;
+  // the home "start here" list ticks "open the sample case" once it was opened
+  useEffect(() => {
+    if (c.is_sample) try { localStorage.setItem("mc-sample-seen", "1"); } catch {}
+  }, [c.is_sample]);
   const [qSetup, setQSetup] = useState(false);
   const delivered = !!c.report_date;
   return (

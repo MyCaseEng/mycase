@@ -187,6 +187,7 @@ export function saveBlob(name: string, blob: Blob) {
     setTimeout(() => n.remove(), 5000);
     return;
   }
+  if (name.endsWith(".docx")) try { localStorage.setItem("mc-doc-made", "1"); } catch {} // for the home "start here" list
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
