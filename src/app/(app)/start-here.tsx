@@ -75,10 +75,10 @@ function HowTo({ id, onClose }: { id: string; onClose: () => void }) {
   const g = GUIDE.find((x) => x.id === id);
   if (!g) return null;
   return (
-    <Modal title={g.title} onClose={onClose} width="max-w-xl">
+    <Modal title={g.title} onClose={onClose} width="max-w-6xl">
       <p className="text-muted">{g.intro}</p>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={guideImg(g.id)} alt={`صورة توضيحية: ${g.title}`} className="mt-3 max-h-72 w-full rounded-xl border border-line bg-background object-contain" />
+      <img src={guideImg(g.id)} alt={`صورة توضيحية: ${g.title}`} className="mt-3 max-h-[68vh] w-full rounded-xl border border-line bg-background object-contain" />
       <ol className="mt-3 space-y-2">
         {g.steps.map((t, i) => (
           <li key={t} className="flex gap-2 leading-7">

@@ -6,7 +6,7 @@ export const metadata = { title: "دليل الاستخدام" };
 // The user guide: a short section for each part of the platform, with a link to open it.
 export default function GuidePage() {
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold">دليل الاستخدام</h1>
         <p className="text-muted">شرح مختصر لكل قسم في المنصة. وإن احتجت مساعدة أخرى فزر «الدعم» في أعلى الصفحة.</p>
@@ -33,7 +33,7 @@ export default function GuidePage() {
           <p className="mt-1 text-muted">{g.intro}</p>
           <a href={guideImg(g.id)} target="_blank" className="mt-3 block overflow-hidden rounded-xl border border-line bg-background">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={guideImg(g.id)} alt={`صورة توضيحية: ${g.title}`} loading="lazy" className="mx-auto max-h-[420px] w-auto object-contain" />
+            <img src={guideImg(g.id)} alt={`صورة توضيحية: ${g.title}`} loading="lazy" className="mx-auto w-full object-contain" />
           </a>
           <ul className="mt-3 space-y-2">
             {g.steps.map((s) => (

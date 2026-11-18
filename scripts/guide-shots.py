@@ -32,17 +32,17 @@ CROP = {"cases": 300}  # pages that are mostly empty space below the part that m
 
 def save(png, name, max_h=900):
     im = Image.open(io.BytesIO(png)).convert("RGB")
-    if im.height > max_h:
-        im = im.crop((0, 0, im.width, max_h))
-    if im.width > 1100:
-        im = im.resize((1100, round(im.height * 1100 / im.width)))
-    im.save(f"{OUT}/{name}.webp", "WEBP", quality=82)
+    if im.height > max_h * 2:
+        im = im.crop((0, 0, im.width, max_h * 2))
+    if im.width > 2000:
+        im = im.resize((2000, round(im.height * 2000 / im.width)))
+    im.save(f"{OUT}/{name}.webp", "WEBP", quality=78)
     print(name, im.size)
 
 ch = shutil.which("google-chrome") or shutil.which("chromium")
 with sync_playwright() as p:
     b = p.chromium.launch(executable_path=ch, args=["--no-sandbox"])
-    pg = b.new_page(viewport={"width": 1280, "height": 900}, device_scale_factor=1)
+    pg = b.new_page(viewport={"width": 1280, "height": 900}, device_scale_factor=2)
     for name, path, loc in SHOTS:
         pg.goto(BASE + path, wait_until="networkidle")
         pg.add_style_tag(content=HIDE)
