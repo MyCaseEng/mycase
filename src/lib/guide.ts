@@ -1,6 +1,9 @@
 // The user guide: one short section per part of the platform. Kept as data so the home checklist can link to sections.
 export type GuideSection = { id: string; title: string; href?: string; open?: string; intro: string; steps: string[] };
 
+// a picture for each section, taken from the demo copy with fake data (scripts/guide-shots.py)
+export const guideImg = (id: string) => `/guide/${id}.webp`;
+
 export const GUIDE: GuideSection[] = [
   {
     id: "home",

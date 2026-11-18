@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GUIDE } from "@/lib/guide";
+import { GUIDE, guideImg } from "@/lib/guide";
 
 export const metadata = { title: "دليل الاستخدام" };
 
@@ -31,6 +31,10 @@ export default function GuidePage() {
             )}
           </div>
           <p className="mt-1 text-muted">{g.intro}</p>
+          <a href={guideImg(g.id)} target="_blank" className="mt-3 block overflow-hidden rounded-xl border border-line bg-background">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={guideImg(g.id)} alt={`صورة توضيحية: ${g.title}`} loading="lazy" className="mx-auto max-h-[420px] w-auto object-contain" />
+          </a>
           <ul className="mt-3 space-y-2">
             {g.steps.map((s) => (
               <li key={s} className="flex gap-2 leading-7">
