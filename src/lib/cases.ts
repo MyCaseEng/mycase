@@ -53,7 +53,35 @@ export type Case = {
   parties: Party[];
   events: Ev[];
   case_team: { user_id: string; duty: "executor" | "coordinator" }[];
+  pays?: Pay[]; // undefined until the payments table exists
 };
+// A deposit paid to the court by a party, or fees the court paid out to the expert.
+export type Pay = {
+  id: string;
+  case_id: string;
+  kind: "deposit" | "fee";
+  party_id: string | null;
+  payer_name: string | null;
+  amount: number;
+  paid_on: string;
+  receipt_no: string | null;
+  file_path: string | null;
+  note: string | null;
+  created_at: string;
+};
+export const paidOf = (c: Pick<Case, "pays">, kind: Pay["kind"]) =>
+  (c.pays ?? []).filter((p) => p.kind === kind).reduce((s, p) => s + Number(p.amount), 0);
+
+// Payments are read on their own so the cases still load if the table is not there yet.
+async function attachPays(officeId: string, cs: Case[], caseId?: string) {
+  const supabase = await createClient();
+  let q = supabase.from("case_payments").select("*").eq("office_id", officeId);
+  if (caseId) q = q.eq("case_id", caseId);
+  const { data, error } = await q.order("paid_on");
+  if (error) return cs;
+  const rows = (data ?? []) as Pay[];
+  return cs.map((c) => ({ ...c, pays: rows.filter((p) => p.case_id === c.id) }));
+}
 export type Member = { user_id: string; display_name: string; short_name: string | null; role: string; is_active: boolean };
 
 const CASE_SELECT =
@@ -68,7 +96,7 @@ export async function listCases(officeId: string) {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data ?? []) as unknown as Case[];
+  return attachPays(officeId, (data ?? []) as unknown as Case[]);
 }
 
 export async function getCase(officeId: string, id: string) {
@@ -80,7 +108,8 @@ export async function getCase(officeId: string, id: string) {
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
-  return data as unknown as Case | null;
+  if (!data) return null;
+  return (await attachPays(officeId, [data as unknown as Case], id))[0];
 }
 
 export async function listMembers(officeId: string) {

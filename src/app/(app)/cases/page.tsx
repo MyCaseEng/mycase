@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getCtx } from "@/lib/office";
-import { listCases, listMembers, isDelivered, nextHearing, lastHearing, sideOf, getOfficeInfo } from "@/lib/cases";
+import { listCases, listMembers, isDelivered, nextHearing, lastHearing, sideOf, getOfficeInfo, paidOf } from "@/lib/cases";
 import { arTime } from "@/lib/docs";
 import { countryName, themeOf } from "@/lib/countries";
 import { normCaseNo, srcOf, srcLabel, fmtD, dayDiff, normRole, todayStr } from "@/lib/format";
@@ -47,6 +47,7 @@ export default async function CasesPage() {
           d(c.received), d(c.prelim_date), ne ? `${ne.type} ${fmtD(ne.date)}${ne.time ? " " + arTime(ne.time) : ""}` : "", d(c.deadline),
           isDelivered(c) ? "تم التسليم" : c.status, [who("coordinator"), who("executor")].filter(Boolean).join(" / "), d(c.report_date),
           n(c.deposit_ordered), n(c.claim_value), n(c.project_value),
+          c.pays ? paidOf(c, "deposit") : "", c.pays ? paidOf(c, "fee") || "" : "",
         ];
       })(),
       search: [c.case_no, c.case_type, c.authority, c.circuit, c.judge, ...c.parties.flatMap((p) => [p.name, p.lawyer])].join(" "),

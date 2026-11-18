@@ -10,7 +10,7 @@ export type CaseAlerts = { caseId: string; label: string; alerts: Alert[] };
 
 export const DOT: Record<Level, string> = { red: "bg-red-600", amber: "bg-amber-500", calm: "bg-slate-300" };
 const ROW: Record<Level, string> = { red: "border-red-200 bg-red-50", amber: "border-amber-200 bg-amber-50", calm: "border-line bg-white" };
-const ANCHOR: Record<string, string> = { questions: "#questions", event: "#events", hearings: "#data", party: "#data", case: "" };
+const ANCHOR: Record<string, string> = { questions: "#questions", event: "#events", hearings: "#data", party: "#data", case: "", money: "#money" };
 
 function addDays(n: number) {
   const d = new Date(todayStr() + "T00:00:00Z");

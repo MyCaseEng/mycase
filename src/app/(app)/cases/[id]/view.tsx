@@ -7,6 +7,7 @@ import QuestionsPanel from "./questions";
 import ArchivePanel from "./archive";
 import EventMail from "./event-mail";
 import DocsPanel from "./docs";
+import MoneyPanel from "./money";
 import { UpdateFromPdf, SourceFileLink } from "./update-pdf";
 import { OFFICE_PLACE, type OfficeInfo, type ProcRow } from "@/lib/docs";
 import type { Alert } from "@/lib/alerts";
@@ -41,6 +42,7 @@ export default function CaseView({ officeId, c, members, notes, letters, alerts,
         </section>
       )}
       <DataPanel c={c} canWrite={canWrite} />
+      <MoneyPanel c={c} officeId={officeId} canWrite={canWrite} />
       <DocsPanel c={c} letters={letters} refs={refs} prefix={settings.refPrefix} office={office} procRows={procRows} canWrite={canWrite} replyDays={settings.defaultReplyDays} onQuestions={() => { setQSetup(true); document.getElementById("questions")?.scrollIntoView({ behavior: "smooth" }); }} />
       <QuestionsPanel c={c} letters={letters} refs={refs} settings={settings} office={office} canWrite={canWrite} openSetup={qSetup} onSetupClose={() => setQSetup(false)} />
       <EventsPanel c={c} canWrite={canWrite} office={office} />

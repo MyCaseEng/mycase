@@ -1,11 +1,11 @@
 // Alert rules, ported from the prototype. Pure functions: same input → same alerts, on server or client.
 import type { Case, QLetter } from "@/lib/cases";
-import { dayDiff, days, fmtD, todayStr } from "@/lib/format";
+import { dayDiff, days, fmtD, todayStr, money } from "@/lib/format";
 
-export const AL_RULES = { RECENT: 60, Q_AFTER: 2, Q_RED: 5, SCHED_AFTER: 7, SCHED_RED: 14, HEAR_DAYS: 14, DL_DAYS: 14 };
+export const AL_RULES = { DEP_AMBER: 5, DEP_RED: 14, RECENT: 60, Q_AFTER: 2, Q_RED: 5, SCHED_AFTER: 7, SCHED_RED: 14, HEAR_DAYS: 14, DL_DAYS: 14 };
 
 export type Level = "red" | "amber" | "calm";
-export type Act = "questions" | "event" | "hearings" | "party" | "case";
+export type Act = "questions" | "event" | "hearings" | "party" | "case" | "money";
 export type Alert = { key: string; caseId: string; level: Level; text: string; act: Act; actLabel: string };
 export type Snooze = { case_id: string; alert_key: string; until: string };
 
@@ -24,9 +24,24 @@ export function caseAlerts(c: Case, letters: QLetter[], snoozes: Snooze[] = []):
   const pname = (id: string | null) => c.parties.find((p) => p.id === id)?.name ?? "الطرف";
   const evs = c.events.filter((e) => e.type !== "جلسة");
 
+  // deposit: the expert does not start before the parties pay it to the court, so the work clock starts at the payment
+  const deps = (c.pays ?? []).filter((p) => p.kind === "deposit").sort((a, b) => a.paid_on.localeCompare(b.paid_on));
+  const waiting = !!c.pays && (c.deposit_ordered ?? 0) > 0 && !deps.length;
+  const work = deps.length ? Math.min(age, -dayDiff(deps[0].paid_on)) : age;
+  if (c.pays && (c.deposit_ordered ?? 0) > 0) {
+    const paid = deps.reduce((s, p) => s + Number(p.amount), 0);
+    const due = Number(c.deposit_ordered);
+    if (paid <= 0)
+      add("deposit", age >= AL_RULES.DEP_RED ? "red" : age >= AL_RULES.DEP_AMBER ? "amber" : "calm",
+        `لم يُسجَّل سداد الأمانة (${money(due)}) — مضى على ورود الدعوى ${days(age)}`, "money", "تسجيل السداد");
+    else if (paid < due)
+      add("deposit-part", "amber", `سُدّد من الأمانة ${money(paid)} من ${money(due)}، والباقي ${money(due - paid)}`, "money", "متابعة الأمانة");
+  }
+
   // questions not prepared yet
-  if (recent && !letters.length && age >= AL_RULES.Q_AFTER)
-    add("noq", age >= AL_RULES.Q_RED ? "red" : "amber", `لم تُرسل أسئلة الخبير للأطراف (منذ ورود الدعوى ${days(age)})`, "questions", "إعداد الأسئلة");
+  const since = deps.length ? "منذ سداد الأمانة" : "منذ ورود الدعوى";
+  if (recent && !waiting && !letters.length && work >= AL_RULES.Q_AFTER)
+    add("noq", work >= AL_RULES.Q_RED ? "red" : "amber", `لم تُرسل أسئلة الخبير للأطراف (${since} ${days(work)})`, "questions", "إعداد الأسئلة");
 
   // reply periods
   letters.forEach((l) => {
@@ -41,11 +56,11 @@ export function caseAlerts(c: Case, letters: QLetter[], snoozes: Snooze[] = []):
   });
 
   // nothing scheduled
-  if (recent && !evs.length) {
+  if (recent && !waiting && !evs.length) {
     const allReplied = main.length > 0 && main.every((p) => letters.some((l) => l.party_id === p.id && l.reply_type === "full"));
     if (allReplied) add("sched", "red", "وصلت ردود الأطراف ولم يُحدَّد موعد اجتماع أو معاينة", "event", "إضافة موعد");
-    else if (age >= AL_RULES.SCHED_AFTER)
-      add("sched", age >= AL_RULES.SCHED_RED ? "red" : "amber", `لم يُحدَّد اجتماع ولا معاينة (منذ ورود الدعوى ${days(age)})`, "event", "إضافة موعد");
+    else if (work >= AL_RULES.SCHED_AFTER)
+      add("sched", work >= AL_RULES.SCHED_RED ? "red" : "amber", `لم يُحدَّد اجتماع ولا معاينة (${since} ${days(work)})`, "event", "إضافة موعد");
   }
 
   // today / tomorrow
