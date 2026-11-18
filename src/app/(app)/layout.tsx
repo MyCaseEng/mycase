@@ -59,7 +59,15 @@ async function SignedIn({ children }: { children: React.ReactNode }) {
 // Subscription notice: a warning to the expert before the end, then grace and read-only notices to everyone.
 function SubBanner({ ctx }: { ctx: Awaited<ReturnType<typeof getCtx>> }) {
   const s = ctx.sub;
-  if (!s || s.phase === "ok" || (s.phase === "warn" && ctx.realRole !== "admin")) return null;
+  if (!s) return null;
+  // during the free trial the expert sees how many days are left (quietly, until the last 14 days)
+  if (s.phase === "ok" && s.trial && ctx.realRole === "admin")
+    return (
+      <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+        أنت في الفترة التجريبية المجانية: باقٍ {days(s.daysLeft)} (تنتهي {fmtD(s.end)}).
+      </div>
+    );
+  if (s.phase === "ok" || (s.phase === "warn" && ctx.realRole !== "admin")) return null;
   const end = fmtD(s.end);
   const left = s.phase === "warn" ? s.daysLeft : GRACE_DAYS + s.daysLeft + 1;
   const tone = s.phase === "locked" ? "border-red-300 bg-red-50 text-red-900" : s.phase === "grace" ? "border-amber-300 bg-amber-50 text-amber-900" : "border-blue-200 bg-blue-50 text-blue-900";

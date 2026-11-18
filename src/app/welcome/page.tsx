@@ -129,6 +129,7 @@ async function Welcome() {
               وأوافق عليها، وأقرّ بأنني الخبير صاحب المكتب أو مفوَّض عنه.
             </span>
           </label>
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">يبدأ مكتبك بتجربة مجانية كاملة لمدة 30 يومًا من لحظة إنشائه.</p>
           <SubmitButton pendingText="جارٍ إنشاء المكتب…" className="w-full rounded-lg bg-ink py-2.5 font-semibold text-white hover:bg-ink-hover">
             إنشاء المكتب
           </SubmitButton>
