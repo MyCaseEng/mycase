@@ -65,10 +65,10 @@ export const getCtx = cache(async (): Promise<Ctx> => {
     redirect(owner ? "/platform" : "/welcome");
   }
   const office = m.offices as unknown as { name: string } | null;
-  const { data: sr, error: se } = await supabase.from("subscriptions").select("trial_ends, paid_until, cancelled_at").eq("office_id", m.office_id).maybeSingle();
+  const { data: sr, error: se } = await supabase.from("subscriptions").select("trial_ends, paid_until, cancelled_at, cycle_months").eq("office_id", m.office_id).maybeSingle();
   const sub = se || !sr ? null : officeSub(sr as Sub, todayStr());
-  // after the grace period the office is read-only until renewal (the database enforces the same rule)
-  const role = sub?.phase === "locked" ? "viewer" : (m.role as Role);
+  // after the subscription ends: read + export, then view only (the database enforces the same rules)
+  const role = sub?.phase === "export" || sub?.phase === "view" ? "viewer" : (m.role as Role);
   return {
     userId,
     email: claims.email ?? "",

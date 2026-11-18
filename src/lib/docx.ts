@@ -178,6 +178,15 @@ export function buildEml(to: string[], cc: string, subject: string, body: string
 }
 
 export function saveBlob(name: string, blob: Blob) {
+  // view-only accounts (subscription ended) may look but not take files out
+  if (document.querySelector("[data-noexport]")) {
+    const n = document.createElement("div");
+    n.textContent = "التنزيل والتصدير متوقفان: الحساب الآن للمشاهدة فقط. راسلنا عبر «الدعم» للتجديد أو لطلب نسخة من بياناتك.";
+    n.setAttribute("style", "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;background:#7f1d1d;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;max-width:90vw;text-align:center");
+    document.body.appendChild(n);
+    setTimeout(() => n.remove(), 5000);
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Shell from "./shell";
 import { getCtx, ROLE_LABEL } from "@/lib/office";
-import { GRACE_DAYS } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 import { loadBoard, caseLabel, getOfficeInfo } from "@/lib/cases";
 import Letterhead from "@/components/letterhead";
@@ -50,32 +49,43 @@ async function SignedIn({ children }: { children: React.ReactNode }) {
       owner={owner === true}
       letterhead={<Letterhead officeName={ctx.officeName} expertName={info.expertName} country={info.country} specialty={info.specialty} />}
     >
-      <SubBanner ctx={ctx} />
-      {children}
+      <div data-noexport={ctx.sub?.phase === "view" ? "1" : undefined}>
+        <SubBanner ctx={ctx} />
+        {children}
+      </div>
     </Shell>
   );
 }
 
-// Subscription notice: a warning to the expert before the end, then grace and read-only notices to everyone.
+// Subscription notice: a warning to the expert before the end, then the grace, export and view-only notices to everyone.
 function SubBanner({ ctx }: { ctx: Awaited<ReturnType<typeof getCtx>> }) {
   const s = ctx.sub;
   if (!s) return null;
-  // during the free trial the expert sees how many days are left (quietly, until the last 14 days)
-  if (s.phase === "ok" && s.trial && ctx.realRole === "admin")
+  const what = s.trial ? "الفترة التجريبية المجانية" : "اشتراك المكتب";
+  const support = "للاشتراك أو التجديد راسلنا عبر زر «الدعم».";
+  // during the free trial the expert sees how many days are left
+  if (s.phase === "ok") {
+    if (!s.trial || ctx.realRole !== "admin") return null;
     return (
       <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
-        أنت في الفترة التجريبية المجانية: باقٍ {days(s.daysLeft)} (تنتهي {fmtD(s.end)}).
+        أنت في الفترة التجريبية المجانية: باقٍ {days(s.daysLeft + 1)} (آخر يوم {fmtD(s.end)}).
       </div>
     );
-  if (s.phase === "ok" || (s.phase === "warn" && ctx.realRole !== "admin")) return null;
-  const end = fmtD(s.end);
-  const left = s.phase === "warn" ? s.daysLeft : GRACE_DAYS + s.daysLeft + 1;
-  const tone = s.phase === "locked" ? "border-red-300 bg-red-50 text-red-900" : s.phase === "grace" ? "border-amber-300 bg-amber-50 text-amber-900" : "border-blue-200 bg-blue-50 text-blue-900";
+  }
+  if (s.phase === "warn" && ctx.realRole !== "admin") return null;
+  const left = s.daysLeft + 1; // the last day counts
+  const tone =
+    s.phase === "view" ? "border-red-300 bg-red-50 text-red-900"
+    : s.phase === "export" ? "border-orange-300 bg-orange-50 text-orange-900"
+    : s.phase === "grace" ? "border-amber-300 bg-amber-50 text-amber-900"
+    : "border-blue-200 bg-blue-50 text-blue-900";
   const text =
     s.phase === "warn"
-      ? `${s.trial ? "تنتهي الفترة التجريبية" : "ينتهي اشتراك المكتب"} ${s.daysLeft === 0 ? "اليوم" : `بعد ${days(s.daysLeft)}`} (${end}). للاشتراك أو التجديد راسلنا عبر زر «الدعم».`
+      ? `${s.trial ? "تنتهي" : "ينتهي"} ${what} ${left === 1 ? "اليوم" : `بعد ${days(left - 1)}`} (آخر يوم ${fmtD(s.end)}). ${support}`
       : s.phase === "grace"
-        ? `انتهى ${s.trial ? "التجربة المجانية" : "اشتراك المكتب"} في ${end}. يبقى العمل متاحًا بالكامل ${days(left)} أخرى، ثم تصبح المنصة للقراءة فقط حتى التجديد. راسلنا عبر زر «الدعم».`
-        : `انتهى ${s.trial ? "التجربة المجانية" : "اشتراك المكتب"} في ${end}، والمنصة الآن للقراءة فقط: يمكنك فتح الدعاوى والاطلاع عليها وتصديرها، دون إضافة أو تعديل. جدّد الاشتراك لاستعادة العمل عبر زر «الدعم».`;
+        ? `انتهى ${what} في ${fmtD(s.end)}. لديك صلاحيات كاملة حتى ${fmtD(s.fullUntil)}، ثم قراءة وتصدير فقط حتى ${fmtD(s.exportUntil)}، ثم مشاهدة فقط. ${support}`
+        : s.phase === "export"
+          ? `انتهى ${what} في ${fmtD(s.end)}. المنصة الآن للقراءة والتصدير فقط حتى ${fmtD(s.exportUntil)}: نزّل ما تحتاجه من ملفات Excel ومستندات Word والمرفقات. بعدها تصبح للمشاهدة فقط. ${support}`
+          : `توقّف حساب المكتب: المشاهدة فقط، دون إضافة أو تعديل أو تصدير. لطلب نسخة من بياناتك أو للتجديد راسلنا عبر زر «الدعم». تُحفظ بياناتك حتى ${fmtD(s.deleteAfter)}، ويعود كل شيء كما كان عند التجديد.`;
   return <div className={`mb-5 rounded-xl border px-4 py-3 text-sm leading-7 ${tone}`}>{text}</div>;
 }

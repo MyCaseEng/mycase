@@ -3,7 +3,7 @@ import { useState, useTransition } from "react";
 import Confirm2 from "@/components/confirm2";
 import { Modal, inputCls } from "@/components/ui";
 import { answerTicket, deleteOffice, setOfficeActive, saveSubscription, renewSubscription, cancelSubscription } from "./actions";
-import { subState, subEnd, GRACE_DAYS, SUB_LABEL, SUB_TONE, type Sub } from "@/lib/subscription";
+import { subState, subDates, SUB_LABEL, SUB_TONE, type Sub } from "@/lib/subscription";
 import { fmtD, todayStr, dayDiff, days } from "@/lib/format";
 
 // Suspend / re-activate (two clicks) and delete (type the office name to confirm).
@@ -83,13 +83,14 @@ export function SubscriptionCell({ sub, office }: { sub: Sub | null; office: str
   const [open, setOpen] = useState(false);
   if (!sub) return <span className="text-xs text-muted">—</span>;
   const st = subState(sub, todayStr());
-  const end = subEnd(sub);
+  const d = subDates(sub);
   const line =
-    st === "trial" ? `تنتهي التجربة ${fmtD(end)} (${dayDiff(end) === 0 ? "اليوم" : `بعد ${days(dayDiff(end))}`})`
-    : st === "active" ? `حتى ${fmtD(end)}`
-    : st === "grace" ? `انتهى ${fmtD(end)} · قراءة فقط بعد ${days(GRACE_DAYS + dayDiff(end) + 1)}`
-    : st === "locked" ? `انتهى ${fmtD(end)} (${days(dayDiff(end))})`
-    : `منذ ${fmtD(sub.cancelled_at)}`;
+    st === "trial" ? `آخر يوم ${fmtD(d.end)} (${dayDiff(d.end) === 0 ? "اليوم" : `بعد ${days(dayDiff(d.end))}`})`
+    : st === "active" ? `حتى ${fmtD(d.end)}`
+    : st === "grace" ? `انتهى ${fmtD(d.end)} · كامل حتى ${fmtD(d.fullUntil)}`
+    : st === "export" ? `انتهى ${fmtD(d.end)} · تصدير حتى ${fmtD(d.exportUntil)}`
+    : st === "view" ? `انتهى ${fmtD(d.end)} · الحذف بعد ${fmtD(d.deleteAfter)}`
+    : `منذ ${fmtD(sub.cancelled_at)} · الحذف بعد ${fmtD(d.deleteAfter)}`;
   return (
     <div className="min-w-36">
       <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${SUB_TONE[st]}`}>{SUB_LABEL[st]}</span>
@@ -141,7 +142,7 @@ function SubModal({ sub, office, onClose }: { sub: Sub; office: string; onClose:
               <input value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="تحويل بنكي" className={inputCls} />
             </label>
           </div>
-          <p className="mt-1 text-xs text-muted">تُضاف الأشهر من نهاية الاشتراك الحالي، أو من نهاية التجربة، أو من يوم الدفع إن كان الاشتراك منتهيًا. التسجيل يرفع وضع «القراءة فقط» فورًا.</p>
+          <p className="mt-1 text-xs text-muted">تُضاف الأشهر من نهاية الاشتراك الحالي، أو من نهاية التجربة، أو من يوم الدفع إن كان الاشتراك منتهيًا. وإن سُجّلت خلال 7 أيام من الانتهاء تُكمل المدة من نهاية الاشتراك السابق. التسجيل يعيد الصلاحيات الكاملة فورًا.</p>
           <button disabled={pending} onClick={() => run(() => renewSubscription(office, Number(months), num(amount), paidOn, payNote))} className="mt-2 rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white">
             تسجيل الدفعة
           </button>
