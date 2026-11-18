@@ -11,7 +11,7 @@ import MoneyPanel from "./money";
 import BundlePanel from "./bundle";
 import { bundleNumbers, type BundleItem, type CaseFinal } from "@/lib/bundle";
 import { UpdateFromPdf, SourceFileLink } from "./update-pdf";
-import { OFFICE_PLACE, type OfficeInfo, type ProcRow } from "@/lib/docs";
+import { OFFICE_PLACE, sideLabel, type OfficeInfo, type ProcRow } from "@/lib/docs";
 import type { Alert } from "@/lib/alerts";
 import { AlertLine } from "@/components/alerts-ui";
 import { fmtD, inDays, dayDiff, days, money, normCaseNo, normRole, srcOf, srcLabel, todayStr, ROLES1, ROLES2, ROLES3 } from "@/lib/format";
@@ -348,7 +348,7 @@ function EventsPanel({ c, canWrite, office }: { c: Case; canWrite: boolean; offi
   const [open, setOpen] = useState<Ev | "new" | null>(null);
   const [mail, setMail] = useState<Ev | null>(null);
   const evs = c.events.filter((e) => e.type !== "جلسة").sort((a, b) => (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")));
-  const who = (v: string) => (v === "1" ? "الطرف الأول" : v === "2" ? "الطرف الثاني" : "كل الأطراف");
+  const who = (v: string) => (v === "1" ? inviteLabel(c, 1) : v === "2" ? inviteLabel(c, 2) : "كل الأطراف");
   return (
     <section id="events" className={`${panel} scroll-mt-4`}>
       <div className="mb-3 flex items-center gap-3">
@@ -400,13 +400,20 @@ function EventsPanel({ c, canWrite, office }: { c: Case; canWrite: boolean; offi
           </table>
         </div>
       )}
-      {open && <EventModal caseId={c.id} e={open === "new" ? null : open} onClose={() => setOpen(null)} />}
+      {open && <EventModal c={c} e={open === "new" ? null : open} onClose={() => setOpen(null)} />}
       {mail && <EventMail c={c} e={mail} office={office} onClose={() => setMail(null)} />}
     </section>
   );
 }
 
-function EventModal({ caseId, e, onClose }: { caseId: string; e: Ev | null; onClose: () => void }) {
+// who is invited, as the judgment names them: «المدعية: شركة …»
+function inviteLabel(c: Case, s: 1 | 2) {
+  const ps = c.parties.filter((p) => p.side === s).sort((a, b) => a.sort - b.sort);
+  return ps.length ? `${sideLabel(c, s)}: ${ps.map((p) => p.name).join("، ")}` : sideLabel(c, s);
+}
+
+function EventModal({ c, e, onClose }: { c: Case; e: Ev | null; onClose: () => void }) {
+  const caseId = c.id;
   const [, start] = useTransition();
   const [res, action, pending] = useActionState<Res, FormData>(async (s, f) => {
     const r = await saveEvent(caseId, e?.id ?? null, s, f);
@@ -425,8 +432,8 @@ function EventModal({ caseId, e, onClose }: { caseId: string; e: Ev | null; onCl
         <Field label="المدعوون">
           <select name="invited" defaultValue={e?.invited ?? "all"} className={inputCls}>
             <option value="all">كل الأطراف</option>
-            <option value="1">الطرف الأول</option>
-            <option value="2">الطرف الثاني</option>
+            <option value="1">{inviteLabel(c, 1)}</option>
+            <option value="2">{inviteLabel(c, 2)}</option>
           </select>
         </Field>
         <Field label="التاريخ">
