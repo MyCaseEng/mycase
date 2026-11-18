@@ -60,7 +60,7 @@ export default async function Home() {
   const sample = cases.find((c) => c.is_sample);
   const start: StartStep[] = [
     { key: "office", label: "أنشئ مكتبك", href: "/settings", guide: "home", done: true },
-    { key: "sample", label: "افتح الدعوى النموذجية وتجوّل فيها", href: sample ? `/cases/${sample.id}` : "/cases", guide: "home", done: sample ? "local" : true },
+    { key: "sample", label: "افتح الدعوى النموذجية وتجوّل فيها", href: sample ? `/cases/${sample.id}` : "/cases", guide: "sample", done: sample ? "local" : true },
     { key: "case", label: "أضف أول دعوى حقيقية", href: "/cases/new", guide: "cases", done: cases.some((c) => !c.is_sample) },
     ...(ctx.realRole === "admin" ? [{ key: "team", label: "أضف فريقك", href: "/team", guide: "team", done: facts.members > 1 } as StartStep] : []),
     { key: "ref", label: "أصدر أول رقم مرجعي", href: "/refs", guide: "refs", done: facts.refs > 0 },

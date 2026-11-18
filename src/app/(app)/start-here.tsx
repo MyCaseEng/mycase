@@ -2,6 +2,8 @@
 // "Start here": the first steps of a new office, ticked off as they are done. Closes by itself when all are done.
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Modal } from "@/components/ui";
+import { GUIDE } from "@/lib/guide";
 
 export type StartStep = { key: string; label: string; href: string; guide: string; done: boolean | "local" };
 
@@ -10,6 +12,7 @@ const LOCAL: Record<string, string> = { sample: "mc-sample-seen", doc: "mc-doc-m
 export default function StartHere({ steps }: { steps: StartStep[] }) {
   const [local, setLocal] = useState<Record<string, boolean> | null>(null);
   const [hidden, setHidden] = useState(true);
+  const [how, setHow] = useState<string | null>(null); // the guide section shown in a window
   useEffect(() => {
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only flags, read once after mount
@@ -56,12 +59,37 @@ export default function StartHere({ steps }: { steps: StartStep[] }) {
                 <Link href={s.href} className="font-medium hover:text-brand">{s.label}</Link>
               )}
               {!ok && (
-                <Link href={`/guide#${s.guide}`} className="text-xs text-muted hover:text-brand">كيف؟</Link>
+                <button onClick={() => setHow(s.guide)} className="text-xs text-muted hover:text-brand">كيف؟</button>
               )}
             </li>
           );
         })}
       </ol>
+      {how && <HowTo id={how} onClose={() => setHow(null)} />}
     </section>
+  );
+}
+
+// Only the part of the guide that belongs to this step
+function HowTo({ id, onClose }: { id: string; onClose: () => void }) {
+  const g = GUIDE.find((x) => x.id === id);
+  if (!g) return null;
+  return (
+    <Modal title={g.title} onClose={onClose} width="max-w-xl">
+      <p className="text-muted">{g.intro}</p>
+      <ol className="mt-3 space-y-2">
+        {g.steps.map((t, i) => (
+          <li key={t} className="flex gap-2 leading-7">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand">{i + 1}</span>
+            <span>{t}</span>
+          </li>
+        ))}
+      </ol>
+      {g.href && g.open && (
+        <Link href={g.href} onClick={onClose} className="mt-4 inline-block rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-ink-hover">
+          افتح «{g.open}»
+        </Link>
+      )}
+    </Modal>
   );
 }
