@@ -1,7 +1,8 @@
 "use client";
 import { useActionState, useEffect, useRef, useState } from "react";
 import SubmitButton from "@/components/submit-button";
-import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries";
+import { DEFAULT_COUNTRY } from "@/lib/countries";
+import CountryPicker from "@/components/country-picker";
 import { SPECIALTIES, DEFAULT_SPECIALTY } from "@/lib/specialties";
 import { createOfficeForm, createFromSignup } from "./actions";
 import type { SetupRes } from "@/lib/office-setup";
@@ -16,14 +17,10 @@ export function OfficeFields({ v }: { v?: Partial<Record<string, string>> }) {
   return (
     <>
       <input name="name" required defaultValue={v?.name} placeholder="اسم المكتب" className={field} />
-      <label className="block text-sm text-muted">
+      <div className="block text-sm text-muted">
         دولة المكتب
-        <select name="country" defaultValue={v?.country || DEFAULT_COUNTRY} className={`mt-1 bg-white text-foreground ${field}`}>
-          {COUNTRIES.map(([c, n]) => (
-            <option key={c} value={c}>{n}</option>
-          ))}
-        </select>
-      </label>
+        <CountryPicker name="country" defaultValue={v?.country || DEFAULT_COUNTRY} />
+      </div>
       <label className="block text-sm text-muted">
         نوع وتخصص الخبرة
         <select name="specialty" defaultValue={v?.specialty || DEFAULT_SPECIALTY} className={`mt-1 bg-white text-foreground ${field}`}>
