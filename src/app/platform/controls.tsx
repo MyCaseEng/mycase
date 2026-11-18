@@ -2,7 +2,7 @@
 import { useState, useTransition } from "react";
 import Confirm2 from "@/components/confirm2";
 import { Modal, inputCls } from "@/components/ui";
-import { answerTicket, deleteOffice, setOfficeActive, saveSubscription, renewSubscription, cancelSubscription } from "./actions";
+import { answerTicket, deleteOffice, deleteOrphan, setOfficeActive, saveSubscription, renewSubscription, cancelSubscription } from "./actions";
 import { subState, subDates, SUB_LABEL, SUB_TONE, type Sub } from "@/lib/subscription";
 import { fmtD, todayStr, dayDiff, days } from "@/lib/format";
 
@@ -27,7 +27,7 @@ export function OfficeActions({ id, name, active }: { id: string; name: string; 
       {del && (
         <Modal title="حذف المكتب نهائياً" onClose={() => setDel(false)} width="max-w-md">
           <p className="text-sm leading-7">
-            سيُحذف <b>{name}</b> مع كل ما فيه: الدعاوى والمواعيد والأرقام المرجعية والقوالب وسجل النشاط، ويخرج منه كل أعضائه. لا يمكن التراجع عن الحذف. إن كنت تريد منعه مؤقتاً فقط، استعمل «إيقاف».
+            سيُحذف <b>{name}</b> مع كل ما فيه: الدعاوى والمواعيد والأرقام المرجعية والقوالب وسجل النشاط، وتُحذف حسابات أعضائه (الخبير والفريق) فيستطيع بريدهم التسجيل من جديد. لا يمكن التراجع عن الحذف. إن كنت تريد منعه مؤقتاً فقط، استعمل «إيقاف».
           </p>
           <label className="mt-3 block text-sm">
             <span className="text-muted">للتأكيد، اكتب اسم المكتب كما هو:</span>
@@ -201,5 +201,17 @@ function SubModal({ sub, office, onClose }: { sub: Sub; office: string; onClose:
         {msg && <p className={msg.ok ? "font-semibold text-emerald-700" : "text-red-700"}>{msg.text}</p>}
       </div>
     </Modal>
+  );
+}
+
+export function OrphanDelete({ id }: { id: string }) {
+  const [pending, start] = useTransition();
+  const [msg, setMsg] = useState("");
+  return (
+    <span className="flex items-center gap-2">
+      <Confirm2 label="حذف الحساب" confirmLabel="تأكيد الحذف" onConfirm={() => start(async () => setMsg((await deleteOrphan(id)).text))} />
+      {pending && <span className="text-xs text-muted">…</span>}
+      {msg && <span className="text-xs text-muted">{msg}</span>}
+    </span>
   );
 }

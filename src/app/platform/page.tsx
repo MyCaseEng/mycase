@@ -3,7 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { BRAND } from "@/lib/brand";
-import { OfficeActions, TicketReply, SubscriptionCell } from "./controls";
+import { OfficeActions, TicketReply, SubscriptionCell, OrphanDelete } from "./controls";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Sub } from "@/lib/subscription";
 import { KIND_LABEL, pageLabel } from "@/lib/support";
 import { signFiles } from "@/lib/support-actions";
@@ -70,6 +71,7 @@ async function Platform() {
   const kpi = kp.error ? null : ((kp.data ?? [])[0] as K | undefined) ?? null;
   const subs = new Map(((sb.error ? [] : sb.data ?? []) as Sub[]).map((x) => [x.office_id, { ...x, price: x.price === null ? null : Number(x.price), paid_total: Number(x.paid_total) }]));
   const usage = us.error ? [] : ((us.data ?? []) as U[]);
+  const orphans = await loadOrphans();
   if (error) throw new Error(error.message);
   type T = { id: string; office_name: string | null; user_name: string | null; user_email: string | null; kind: string; subject: string; body: string; page: string | null; status: string; reply: string | null; replied_at: string | null; created_at: string; files: string[] };
   const tickets = await Promise.all(((tk ?? []) as T[]).map(async (x) => ({ ...x, atts: await signFiles(x.files ?? []) })));
@@ -267,6 +269,36 @@ async function Platform() {
         </table>
       </div>
 
+      {orphans.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-lg font-bold">
+            حسابات بلا مكتب <span className="text-sm font-normal text-muted">({orphans.length})</span>
+          </h2>
+          <p className="text-sm text-muted">سجّلت دخولها ولا تنتمي إلى أي مكتب: مكتب حُذف قبل حذف الحسابات معه، أو تسجيل لم يكتمل. حذف الحساب يحرّر بريده ليسجّل من جديد.</p>
+          <div className="overflow-x-auto rounded-xl border border-line bg-white">
+            <table className="w-full text-sm">
+              <thead className="bg-background text-right text-xs text-muted">
+                <tr>
+                  {["البريد", "تاريخ التسجيل", "آخر دخول", ""].map((h) => (
+                    <th key={h} className="px-3 py-2.5 font-medium">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {orphans.map((o) => (
+                  <tr key={o.id} className="border-t border-line">
+                    <td className="px-3 py-2.5" dir="ltr">{o.email}</td>
+                    <td className="px-3 py-2.5 tabular-nums">{fmtD(day(o.created)!)}</td>
+                    <td className="px-3 py-2.5">{ago(o.last)}</td>
+                    <td className="px-3 py-2.5"><OrphanDelete id={o.id} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {/* support messages from the offices */}
       <section id="support" className="space-y-3">
         <h2 className="flex items-baseline gap-2 text-lg font-bold">
@@ -301,4 +333,18 @@ async function Platform() {
       </main>
     </div>
   );
+}
+
+// sign-in accounts with no office and that are not platform owners (service key needed)
+async function loadOrphans() {
+  const admin = createAdminClient();
+  if (!admin) return [];
+  const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (error) return [];
+  const [{ data: ms }, { data: owners }] = await Promise.all([admin.from("members").select("user_id"), admin.from("platform_admins").select("user_id")]);
+  const keep = new Set([...(ms ?? []), ...(owners ?? [])].map((x) => x.user_id as string));
+  return data.users
+    .filter((u) => !keep.has(u.id))
+    .map((u) => ({ id: u.id, email: u.email ?? "—", created: u.created_at, last: u.last_sign_in_at ?? null }))
+    .sort((a, b) => b.created.localeCompare(a.created));
 }
