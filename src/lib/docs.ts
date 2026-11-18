@@ -125,7 +125,8 @@ export function procAuto(c: Case, letters: QLetter[]): ProcLine[] {
   return L;
 }
 
-export function procList(c: Case & { proc_num?: string }, letters: QLetter[], rows: ProcRow[]) {
+// nums: document numbers from the bundle index (حافظة المستندات), when the case has one
+export function procList(c: Case & { proc_num?: string }, letters: QLetter[], rows: ProcRow[], nums?: Map<string, number>) {
   const over = new Map(rows.filter((r) => r.auto_key).map((r) => [r.auto_key!, r]));
   const auto = procAuto(c, letters).map((x) => {
     const o = over.get(x.key);
@@ -142,12 +143,13 @@ export function procList(c: Case & { proc_num?: string }, letters: QLetter[], ro
     ? withAtt.slice().sort((a, b) => (a.grp ?? "9").localeCompare(b.grp ?? "9") || a.date.localeCompare(b.date))
     : withAtt;
   order.forEach((x, i) => ((x as ProcLine).n = i + 1));
+  if (nums?.size) withAtt.forEach((x) => ((x as ProcLine).n = nums.get(x.key)));
   return { vis: vis as ProcLine[], hid: hid as ProcLine[] };
 }
-export const procLine = (x: ProcLine) => `في تاريخ ${fmtD(x.date)} ${x.text}${x.att ? `، مرفق ${x.att} - مستند رقم ${x.n}` : ""}.`;
+export const procLine = (x: ProcLine) => `في تاريخ ${fmtD(x.date)} ${x.text}${x.att ? `، مرفق ${x.att}${x.n ? ` - مستند رقم ${x.n}` : ""}` : ""}.`;
 export function procAttsBySide(vis: ProcLine[]) {
   const s1: string[] = [], s2: string[] = [];
-  vis.filter((x) => x.att && x.side).forEach((x) => (x.side === 1 ? s1 : s2).push(`${x.att} - مستند رقم ${x.n}`));
+  vis.filter((x) => x.att && x.side).forEach((x) => (x.side === 1 ? s1 : s2).push(`${x.att}${x.n ? ` - مستند رقم ${x.n}` : ""}`));
   return { s1, s2 };
 }
 

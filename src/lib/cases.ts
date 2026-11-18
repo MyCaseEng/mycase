@@ -185,6 +185,17 @@ export const caseLabel = (c: Pick<Case, "case_no" | "case_type" | "parties">) =>
     ? `${c.case_no.trim()} ${c.case_type ?? ""}`.trim()
     : c.parties.filter((p) => p.side !== 3).map((p) => p.name).slice(0, 2).join(" ضد ") || "دعوى بدون رقم";
 
+// the documents bundle of a case; null when its tables are not there yet
+export async function listBundle(caseId: string) {
+  const supabase = await createClient();
+  const [items, fin] = await Promise.all([
+    supabase.from("bundle_items").select("*").eq("case_id", caseId),
+    supabase.from("case_final").select("*").eq("case_id", caseId).maybeSingle(),
+  ]);
+  if (items.error) return null;
+  return { items: (items.data ?? []) as import("@/lib/bundle").BundleItem[], final: (fin.data ?? null) as import("@/lib/bundle").CaseFinal | null };
+}
+
 export async function listProcRows(caseId: string) {
   const supabase = await createClient();
   const { data } = await supabase.from("procedures").select("id, auto_key, date, body, hidden, att").eq("case_id", caseId);

@@ -4,20 +4,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Case, QLetter } from "@/lib/cases";
 import { procList, procLine, type ProcLine, type ProcRow } from "@/lib/docs";
+import { bundleNumbers, type BundleItem } from "@/lib/bundle";
 import { simpleDocx, saveBlob, safeName } from "@/lib/docx";
 import { caseRef, fmtD, todayStr } from "@/lib/format";
 import { Modal, inputCls } from "@/components/ui";
 import Confirm2 from "@/components/confirm2";
 import { setProcOverride, saveManualProc, deleteManualProc, setProcNum, logDoc } from "../cases/doc-actions";
 
-type P = { c: Case; letters: QLetter[]; rows: ProcRow[]; options: { id: string; label: string }[]; canWrite: boolean };
+type P = { c: Case; letters: QLetter[]; rows: ProcRow[]; bundle: BundleItem[]; options: { id: string; label: string }[]; canWrite: boolean };
 
-export default function ProcView({ c, letters, rows, options, canWrite }: P) {
+export default function ProcView({ c, letters, rows, bundle, options, canWrite }: P) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [edit, setEdit] = useState<ProcLine | "new" | null>(null);
   const [msg, setMsg] = useState("");
-  const { vis, hid } = procList(c, letters, rows);
+  // document numbers follow the bundle index once the case has one
+  const nums = bundle.length ? bundleNumbers(c, bundle) : undefined;
+  const { vis, hid } = procList(c, letters, rows, nums);
   const title = `${caseRef(c)} — ${c.parties.filter((p) => p.side !== 3).map((p) => p.name).slice(0, 2).join(" ضد ")}`;
   const text = vis.map((x, i) => `${i + 1}- ${procLine(x)}`).join("\n");
 
@@ -47,6 +50,7 @@ export default function ProcView({ c, letters, rows, options, canWrite }: P) {
               <option value="time">حسب التسلسل الزمني</option>
             </select>
           </label>
+          {nums && <span className="text-xs text-muted">الأرقام تتبع فهرس حافظة المستندات</span>}
           <span className="flex-1" />
           {canWrite && (
             <button onClick={() => setEdit("new")} className="rounded-lg border border-line px-3 py-1.5 text-sm">+ إضافة إجراء</button>

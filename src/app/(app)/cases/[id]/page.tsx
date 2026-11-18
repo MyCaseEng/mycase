@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getCtx } from "@/lib/office";
-import { getCase, listMembers, listNotes, listLetters, listRefs, listProcRows, getOfficeInfo } from "@/lib/cases";
+import { getCase, listMembers, listNotes, listLetters, listRefs, listProcRows, getOfficeInfo, listBundle } from "@/lib/cases";
 import { getSettings } from "@/lib/settings";
 import { caseAlerts, LEVEL_ORDER } from "@/lib/alerts";
 import { createClient } from "@/lib/supabase/server";
@@ -10,7 +10,7 @@ export default async function CasePage({ params }: PageProps<"/cases/[id]">) {
   const { id } = await params;
   const ctx = await getCtx();
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const [c, members, notes, letters, refs, settings, procRows, office] = await Promise.all([
+  const [c, members, notes, letters, refs, settings, procRows, office, bundle] = await Promise.all([
     getCase(ctx.officeId, id),
     listMembers(ctx.officeId),
     listNotes(id),
@@ -19,6 +19,7 @@ export default async function CasePage({ params }: PageProps<"/cases/[id]">) {
     getSettings(ctx.officeId),
     listProcRows(id),
     getOfficeInfo(ctx.officeId),
+    listBundle(id),
   ]);
   if (!c) notFound();
   const supabase = await createClient();
@@ -34,6 +35,7 @@ export default async function CasePage({ params }: PageProps<"/cases/[id]">) {
       alerts={alerts}
       office={office}
       procRows={procRows}
+      bundle={bundle}
       refs={refs}
       settings={{ refPrefix: settings.refPrefix, qTemplates: settings.qTemplates, defaultReplyDays: settings.defaultReplyDays }}
       canWrite={ctx.role !== "viewer"}

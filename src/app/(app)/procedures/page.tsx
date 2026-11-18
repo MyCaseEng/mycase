@@ -1,5 +1,5 @@
 import { getCtx } from "@/lib/office";
-import { listCases, listLetters, listProcRows, isDelivered } from "@/lib/cases";
+import { listCases, listLetters, listProcRows, isDelivered, listBundle } from "@/lib/cases";
 import { normCaseNo } from "@/lib/format";
 import ProcView from "./view";
 
@@ -21,6 +21,6 @@ export default async function ProceduresPage({ searchParams }: PageProps<"/proce
         <p className="text-muted">لا توجد دعاوى بعد.</p>
       </div>
     );
-  const [letters, rows] = await Promise.all([listLetters(c.id), listProcRows(c.id)]);
-  return <ProcView c={c} letters={letters} rows={rows} options={options} canWrite={ctx.role !== "viewer"} />;
+  const [letters, rows, bundle] = await Promise.all([listLetters(c.id), listProcRows(c.id), listBundle(c.id)]);
+  return <ProcView c={c} letters={letters} rows={rows} bundle={bundle?.items ?? []} options={options} canWrite={ctx.role !== "viewer"} />;
 }

@@ -8,6 +8,8 @@ import ArchivePanel from "./archive";
 import EventMail from "./event-mail";
 import DocsPanel from "./docs";
 import MoneyPanel from "./money";
+import BundlePanel from "./bundle";
+import { bundleNumbers, type BundleItem, type CaseFinal } from "@/lib/bundle";
 import { UpdateFromPdf, SourceFileLink } from "./update-pdf";
 import { OFFICE_PLACE, type OfficeInfo, type ProcRow } from "@/lib/docs";
 import type { Alert } from "@/lib/alerts";
@@ -21,12 +23,13 @@ import {
 } from "../actions";
 
 export type CaseSettings = { refPrefix: string; qTemplates: Record<string, string[]>; defaultReplyDays: number };
-type P = { officeId: string; c: Case; members: Member[]; notes: Note[]; letters: QLetter[]; alerts: Alert[]; office: OfficeInfo; procRows: ProcRow[]; refs: Ref[]; settings: CaseSettings; canWrite: boolean };
+type P = { officeId: string; c: Case; members: Member[]; notes: Note[]; letters: QLetter[]; alerts: Alert[]; office: OfficeInfo; procRows: ProcRow[]; refs: Ref[]; settings: CaseSettings; canWrite: boolean; bundle: { items: BundleItem[]; final: CaseFinal | null } | null };
 
 const panel = "rounded-2xl border border-line bg-white p-5";
 const btn = "rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-background";
 
-export default function CaseView({ officeId, c, members, notes, letters, alerts, refs, settings, office, procRows, canWrite }: P) {
+export default function CaseView({ officeId, c, members, notes, letters, alerts, refs, settings, office, procRows, canWrite, bundle }: P) {
+  const nums = bundle ? bundleNumbers(c, bundle.items) : undefined;
   const [qSetup, setQSetup] = useState(false);
   const delivered = !!c.report_date;
   return (
@@ -43,9 +46,10 @@ export default function CaseView({ officeId, c, members, notes, letters, alerts,
       )}
       <DataPanel c={c} canWrite={canWrite} />
       <MoneyPanel c={c} officeId={officeId} canWrite={canWrite} />
-      <DocsPanel c={c} letters={letters} refs={refs} prefix={settings.refPrefix} office={office} procRows={procRows} canWrite={canWrite} replyDays={settings.defaultReplyDays} onQuestions={() => { setQSetup(true); document.getElementById("questions")?.scrollIntoView({ behavior: "smooth" }); }} />
+      <DocsPanel c={c} letters={letters} refs={refs} prefix={settings.refPrefix} office={office} procRows={procRows} nums={nums} canWrite={canWrite} replyDays={settings.defaultReplyDays} onQuestions={() => { setQSetup(true); document.getElementById("questions")?.scrollIntoView({ behavior: "smooth" }); }} />
       <QuestionsPanel c={c} letters={letters} refs={refs} settings={settings} office={office} canWrite={canWrite} openSetup={qSetup} onSetupClose={() => setQSetup(false)} />
       <EventsPanel c={c} canWrite={canWrite} office={office} />
+      <BundlePanel c={c} letters={letters} office={office} officeId={officeId} bundle={bundle} canWrite={canWrite} />
       <ArchivePanel c={c} refs={refs} members={members} prefix={settings.refPrefix} canWrite={canWrite} />
       <TeamPanel c={c} members={members} canWrite={canWrite} />
       {canWrite && (

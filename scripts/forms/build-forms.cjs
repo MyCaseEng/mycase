@@ -95,6 +95,8 @@ function table(headers, rows, widths, rowH) {
   });
 }
 const gap = () => para("", { after: 80 });
+// a white square; the platform swaps it for the QR code of the bundle link
+const QR_PLACEHOLDER = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC", "base64");
 const signRow = (a, b) => table([a, b], [["الاسم: " + DOTS, "الاسم: " + DOTS], ["التوقيع: " + DOTS, "التوقيع: " + DOTS]], [4500, 4500]);
 // those present: whoever attends for each party (a company sends whoever represents it), plus spare rows
 const attendees = () =>
@@ -239,6 +241,27 @@ const FORMS = {
     table(["م", "بيان المستند", "أصل / صورة", "تاريخ استلامه أصلاً", "عدد الصفحات"], [["1", DOTS, "……", "……", "……"], ["2", DOTS, "……", "……", "……"], ["3", DOTS, "……", "……", "……"]], [700, 3800, 1400, 1700, 1400]),
     para("ويُقرّ المُستلِم باستلام المستندات المذكورة أعلاه كاملة وبحالتها التي سُلّمت بها.", { before: 160 }),
     gap(), signRow("المُسلِّم عن المكتب", "المُستلِم"),
+  ],
+  // 11 — the short documents bundle: index on the first page, the download link and its QR code on the second.
+  // {{TABLE}} is replaced by the index table and the placeholder picture by the QR code (src/lib/bundle-doc.ts).
+  bundle: () => [
+    ...title("حافظة المستندات", "لتقرير الخبرة في الدعوى رقم {{CASE_NO}}"),
+    para("المقدَّمة إلى {{AUTH}}", { center: true, after: 160 }),
+    para("{{P1}}", { center: true, bold: true, after: 40 }),
+    para("ضد", { center: true, after: 40 }),
+    para("{{P2}}", { center: true, bold: true, after: 200 }),
+    head("فهرس المستندات"),
+    para("{{TABLE}}", { after: 0 }),
+    new Paragraph({ bidirectional: true, pageBreakBefore: true, children: [] }),
+    ...title("رابط تحميل المستندات", "الحافظة الكاملة لمستندات الدعوى ومرفقاتها"),
+    para("{{LINK}}", { center: true, bold: true, before: 200, after: 360, color: BRASS }),
+    new Paragraph({
+      bidirectional: true,
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 160 },
+      children: [new D.ImageRun({ type: "png", data: QR_PLACEHOLDER, transformation: { width: 200, height: 200 } })],
+    }),
+    para("امسح الرمز بكاميرا الجوال لفتح رابط التحميل مباشرة", { center: true, size: 20, color: "777777" }),
   ],
   // 10
   report: () => [

@@ -110,11 +110,11 @@ export function minutesForm(c: Case, e: Ev | undefined, office: OfficeInfo, ref:
 
 // 05 / 06 / 07 — letters to the court
 export type CourtOpts = { date: string; hearing: string; period: string; reason: string; reasonDep: string; reasons: string[]; amount: string; payer: string };
-export function courtForm(kind: "postpone" | "deposit" | "both", c: Case, office: OfficeInfo, ref: string, o: CourtOpts, letters: QLetter[], procRows: ProcRow[]): Filled {
+export function courtForm(kind: "postpone" | "deposit" | "both", c: Case, office: OfficeInfo, ref: string, o: CourtOpts, letters: QLetter[], procRows: ProcRow[], nums?: Map<string, number>): Filled {
   const cur = currencyOf(office.country)[0];
   const nd = o.amount ? Number(o.amount) : null;
   const diff = nd != null && c.deposit_ordered != null ? nd - Number(c.deposit_ordered) : null;
-  const { vis } = procList(c, letters, procRows);
+  const { vis } = procList(c, letters, procRows, nums);
   return {
     kind,
     vars: {
@@ -139,9 +139,9 @@ export function documentsForm(kind: "receipt" | "handover", c: Case, office: Off
 }
 
 // 10 — the expert report skeleton
-export function reportForm(c: Case & { proc_num?: string }, office: OfficeInfo, ref: string, letters: QLetter[], procRows: ProcRow[]): Filled {
+export function reportForm(c: Case & { proc_num?: string }, office: OfficeInfo, ref: string, letters: QLetter[], procRows: ProcRow[], nums?: Map<string, number>): Filled {
   const cur = currencyOf(office.country)[0];
-  const { vis } = procList(c, letters, procRows);
+  const { vis } = procList(c, letters, procRows, nums);
   const at = procAttsBySide(vis);
   return {
     kind: "report",

@@ -110,6 +110,37 @@ export async function fillTemplate(templateB64: string, vars: Record<string, str
   return zipStore(ents);
 }
 
+// Same as fillTemplate, plus: whole paragraphs holding {{KEY}} replaced by raw WordprocessingML (a table…),
+// and every picture in word/media swapped for the given PNG (the QR code).
+export async function fillTemplateEx(
+  templateB64: string,
+  vars: Record<string, string>,
+  o: { raw?: Record<string, string>; png?: Uint8Array; swap?: Record<string, string> } = {}
+) {
+  const ents = await unzipEntries(b64ToBuf(templateB64));
+  const td = new TextDecoder(), te = new TextEncoder();
+  for (const en of ents) {
+    if (o.png && /^word\/media\/.+\.png$/i.test(en.name)) {
+      en.data = o.png;
+      continue;
+    }
+    if (!/^word\/(document|header\d*|footer\d*)\.xml$/.test(en.name)) continue;
+    let x = td.decode(en.data);
+    for (const [k, xml] of Object.entries(o.raw ?? {})) {
+      const i = x.indexOf(`{{${k}}}`);
+      if (i < 0) continue;
+      const s0 = Math.max(x.lastIndexOf("<w:p ", i), x.lastIndexOf("<w:p>", i));
+      const e0 = x.indexOf("</w:p>", i) + 6;
+      if (s0 >= 0 && e0 > 6) x = x.slice(0, s0) + xml + x.slice(e0);
+    }
+    x = x.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, k) => (vars[k] != null ? xmlEsc(vars[k]) : ""));
+    for (const [a, b] of Object.entries(o.swap ?? {})) x = x.split(a).join(b);
+    en.data = te.encode(x);
+  }
+  return zipStore(ents);
+}
+export { xmlEsc };
+
 // A plain RTL document built from scratch (used for the procedures export).
 export function simpleDocx(title: string, subtitle: string, lines: string[]) {
   const FONT = '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>';

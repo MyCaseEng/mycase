@@ -14,9 +14,9 @@ import { issueRef } from "../../refs/actions";
 
 const panel = "rounded-2xl border border-line bg-white p-5";
 
-type Props = { c: Case; letters: QLetter[]; refs: Ref[]; prefix: string; office: OfficeInfo; procRows: ProcRow[]; canWrite: boolean; replyDays: number; onQuestions: () => void };
+type Props = { c: Case; letters: QLetter[]; refs: Ref[]; prefix: string; office: OfficeInfo; procRows: ProcRow[]; nums?: Map<string, number>; canWrite: boolean; replyDays: number; onQuestions: () => void };
 
-export default function DocsPanel({ c, letters, refs, prefix, office, procRows, canWrite, replyDays, onQuestions }: Props) {
+export default function DocsPanel({ c, letters, refs, prefix, office, procRows, nums, canWrite, replyDays, onQuestions }: Props) {
   const docs = useMemo(() => caseDocs(c, letters, refs), [c, letters, refs]);
   const [pick, setPick] = useState<DocItem | null>(null);
   const [letter, setLetter] = useState<{ k: LetterKey; withRef: boolean } | null>(null);
@@ -33,7 +33,7 @@ export default function DocsPanel({ c, letters, refs, prefix, office, procRows, 
       else if (d.kind === "start" && d.party) f = startForm(c, d.party, office, ref, replyDays);
       else if (d.kind === "meet" || d.kind === "insp") f = minutesForm(c, d.ev, office, ref, d.party ? [d.party] : d.parties, d.kind === "insp" ? "inspection" : "meeting");
       else if (d.kind === "receipt" || d.kind === "handover") f = documentsForm(d.kind, c, office);
-      else f = reportForm(c, office, ref, letters, procRows);
+      else f = reportForm(c, office, ref, letters, procRows, nums);
       const name = `${d.label}${d.party ? " " + d.party.name.split(" ").slice(0, 3).join(" ") : ""} ${c.case_no ?? ""}${d.ev ? " " + d.ev.date : ""}`;
       saveBlob(safeName(name) + ".docx", await makeForm(f, srcOf(c) || null, office.country));
       await logDoc(c.id, `أنشأ ${d.label} (Word)`, (ref ? ref + " · " : "") + d.sub);
@@ -107,14 +107,14 @@ export default function DocsPanel({ c, letters, refs, prefix, office, procRows, 
         </Modal>
       )}
       {letter && (
-        <LetterModal c={c} k={letter.k} withRef={letter.withRef} office={office} letters={letters} procRows={procRows} onClose={() => setLetter(null)} />
+        <LetterModal c={c} k={letter.k} withRef={letter.withRef} office={office} letters={letters} procRows={procRows} nums={nums} onClose={() => setLetter(null)} />
       )}
     </section>
   );
 }
 
 // 05 / 06 / 07: the details the court letter needs; the wording is the platform's standard form
-function LetterModal({ c, k, withRef, office, letters, procRows, onClose }: { c: Case; k: LetterKey; withRef: boolean; office: OfficeInfo; letters: QLetter[]; procRows: ProcRow[]; onClose: () => void }) {
+function LetterModal({ c, k, withRef, office, letters, procRows, nums, onClose }: { c: Case; k: LetterKey; withRef: boolean; office: OfficeInfo; letters: QLetter[]; procRows: ProcRow[]; nums?: Map<string, number>; onClose: () => void }) {
   const L = LETTERS[k];
   const kind = k === "deposit" ? "deposit" : k === "both" ? "both" : "postpone";
   const hearings = c.events.filter((e) => e.type === "جلسة").map((e) => e.date).sort();
@@ -134,7 +134,7 @@ function LetterModal({ c, k, withRef, office, letters, procRows, onClose }: { c:
         const r = await issueRef(c.id, L.cat, L.label, null);
         if (r?.ok) ref = r.ref!;
       }
-      const f = courtForm(kind, c, office, ref, { ...o, reasons: o.reasons.split("\n").map((x) => x.trim()).filter(Boolean) }, letters, procRows);
+      const f = courtForm(kind, c, office, ref, { ...o, reasons: o.reasons.split("\n").map((x) => x.trim()).filter(Boolean) }, letters, procRows, nums);
       saveBlob(safeName(`${L.label} ${c.case_no ?? ""} ${o.date}`) + ".docx", await makeForm(f, srcOf(c) || null, office.country));
       await logDoc(c.id, `أنشأ ${L.label} (Word)`, ref || fmtD(o.date));
       onClose();
