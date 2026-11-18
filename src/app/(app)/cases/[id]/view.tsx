@@ -105,6 +105,7 @@ function DataPanel({ c, canWrite }: { c: Case; canWrite: boolean }) {
           )}
         </div>
         <div className="mt-2 flex flex-wrap justify-center gap-2 text-xs">
+          {c.is_sample && <span className="rounded-full bg-violet-100 px-2.5 py-0.5 font-semibold text-violet-800">دعوى نموذجية · بيانات تجريبية</span>}
           {src && <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-blue-800">{srcLabel(src)}</span>}
           {c.supplementary && <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-purple-800">تقرير تكميلي</span>}
           {c.report_date && <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-green-800">تم التسليم في {fmtD(c.report_date)}</span>}

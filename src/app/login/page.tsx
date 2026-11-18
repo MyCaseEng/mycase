@@ -89,11 +89,7 @@ export default function LoginPage() {
           </div>
         </div>
         <h1 className="mt-6 text-lg font-semibold">{title}</h1>
-        {mode === "signup" && (
-          <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            تجربة مجانية كاملة لمدة <b>30 يومًا</b> بكل المزايا، دون أي دفع مسبق.
-          </p>
-        )}
+
         <form onSubmit={submit} className="mt-4 space-y-3">
           <label className="block">
             <span className="text-sm text-muted">{mode === "signin" ? "البريد الإلكتروني أو معرّف الدخول" : "البريد الإلكتروني"}</span>
@@ -155,7 +151,7 @@ export default function LoginPage() {
           )}
           {mode !== "signup" && (
             <button onClick={() => { setMode("signup"); setMsg(null); }} className="text-brand underline-offset-4 hover:underline">
-              إنشاء حساب جديد · تجربة مجانية 30 يومًا
+              إنشاء حساب جديد
             </button>
           )}
           {mode === "signin" && (

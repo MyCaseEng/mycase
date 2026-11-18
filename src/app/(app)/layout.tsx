@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Shell from "./shell";
 import { getCtx, ROLE_LABEL } from "@/lib/office";
+import StartChoice from "@/components/start-choice";
 import { createClient } from "@/lib/supabase/server";
 import { loadBoard, caseLabel, getOfficeInfo } from "@/lib/cases";
 import Letterhead from "@/components/letterhead";
@@ -53,6 +54,7 @@ async function SignedIn({ children }: { children: React.ReactNode }) {
         <SubBanner ctx={ctx} />
         {children}
       </div>
+      {ctx.askStart && <StartChoice />}
     </Shell>
   );
 }
@@ -65,7 +67,8 @@ function SubBanner({ ctx }: { ctx: Awaited<ReturnType<typeof getCtx>> }) {
   const support = "للاشتراك أو التجديد راسلنا عبر زر «الدعم».";
   // during the free trial the expert sees how many days are left
   if (s.phase === "ok") {
-    if (!s.trial || ctx.realRole !== "admin") return null;
+    // the first 24 hours are for exploring with the sample case: the trial has not started yet
+    if (!s.trial || ctx.realRole !== "admin" || ctx.exploring || ctx.askStart) return null;
     return (
       <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
         أنت في الفترة التجريبية المجانية: باقٍ {days(s.daysLeft + 1)} (آخر يوم {fmtD(s.end)}).

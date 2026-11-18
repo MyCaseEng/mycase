@@ -5,6 +5,7 @@ export type Sub = {
   price: number | null;
   cycle_months: number;
   trial_ends: string;
+  trial_started?: string | null;
   paid_until: string | null;
   cancelled_at: string | null;
   cancel_reason: string | null;

@@ -17,6 +17,9 @@ export type Ctx = {
   realRole: Role;
   displayName: string;
   sub: OfficeSub | null; // null until update 0022 exists
+  // the expert has explored the platform for 24 hours and has not yet chosen the free trial or a subscription
+  askStart: boolean;
+  exploring: boolean; // first 24 hours, before that choice
 };
 
 // Current user + office for every page in the app. Joins pending invitations first.
@@ -31,7 +34,7 @@ export const getCtx = cache(async (): Promise<Ctx> => {
   const findMember = () =>
     supabase
       .from("members")
-      .select("*, offices(name)")
+      .select("*, offices(name, created_at)")
       .eq("user_id", userId)
       .eq("is_active", true)
       .order("created_at")
@@ -64,8 +67,11 @@ export const getCtx = cache(async (): Promise<Ctx> => {
     const { data: owner } = await supabase.rpc("is_platform_admin");
     redirect(owner ? "/platform" : "/welcome");
   }
-  const office = m.offices as unknown as { name: string } | null;
-  const { data: sr, error: se } = await supabase.from("subscriptions").select("trial_ends, paid_until, cancelled_at, cycle_months").eq("office_id", m.office_id).maybeSingle();
+  const office = m.offices as unknown as { name: string; created_at: string } | null;
+  const { data: sr, error: se } = await supabase.from("subscriptions").select("*").eq("office_id", m.office_id).maybeSingle();
+  // trial_started comes with update 0025: before it, nobody is asked to choose
+  const notChosen = !se && !!sr && "trial_started" in sr && !sr.trial_started && !sr.paid_until;
+  const ageH = office?.created_at ? (Date.now() - Date.parse(office.created_at)) / 3600000 : 99;
   const sub = se || !sr ? null : officeSub(sr as Sub, todayStr());
   // after the subscription ends: read + export, then view only (the database enforces the same rules)
   const role = sub?.phase === "export" || sub?.phase === "view" ? "viewer" : (m.role as Role);
@@ -78,6 +84,8 @@ export const getCtx = cache(async (): Promise<Ctx> => {
     realRole: m.role as Role,
     displayName: m.display_name,
     sub,
+    askStart: notChosen && m.role === "admin" && ageH >= 24,
+    exploring: notChosen && ageH < 24,
   };
 });
 

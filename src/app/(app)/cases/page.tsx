@@ -30,6 +30,7 @@ export default async function CasesPage() {
       team: [...new Set(c.case_team.map((t) => name.get(t.user_id) ?? ""))].filter(Boolean).join(" · "),
       delivered: isDelivered(c),
       reportDate: c.report_date ? fmtD(c.report_date) : "",
+      sample: c.is_sample,
       hearing: nh ? { date: fmtD(nh.date), days: dayDiff(nh.date), past: false } : lh ? { date: fmtD(lh.date), days: dayDiff(lh.date), past: true } : null,
       // the full record for the Excel export (same columns as the first platform)
       x: (() => {

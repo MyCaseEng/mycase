@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { createSampleCase } from "@/lib/sample";
 import { createClient } from "@/lib/supabase/server";
 import { BRAND } from "@/lib/brand";
 import SubmitButton from "@/components/submit-button";
@@ -28,6 +29,7 @@ async function createOffice(formData: FormData) {
       specialty: validSpecialty(formData.get("specialty")),
       expert_reg: String(formData.get("expert_reg") || "").trim().slice(0, 40) || null,
     }).eq("id", officeId);
+  await createSampleCase(supabase, officeId as string, cl?.claims?.sub as string);
   redirect("/");
 }
 
@@ -129,7 +131,7 @@ async function Welcome() {
               وأوافق عليها، وأقرّ بأنني الخبير صاحب المكتب أو مفوَّض عنه.
             </span>
           </label>
-          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">يبدأ مكتبك بتجربة مجانية كاملة لمدة 30 يومًا من لحظة إنشائه.</p>
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">سنضيف إلى مكتبك دعوى نموذجية ببيانات تجريبية لتتعرّف على المنصة، ويمكنك حذفها متى شئت.</p>
           <SubmitButton pendingText="جارٍ إنشاء المكتب…" className="w-full rounded-lg bg-ink py-2.5 font-semibold text-white hover:bg-ink-hover">
             إنشاء المكتب
           </SubmitButton>

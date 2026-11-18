@@ -54,6 +54,7 @@ export type Case = {
   events: Ev[];
   case_team: { user_id: string; duty: "executor" | "coordinator" }[];
   pays?: Pay[]; // undefined until the payments table exists
+  is_sample?: boolean; // the sample case added to a new office
 };
 // A deposit paid to the court by a party, or fees the court paid out to the expert.
 export type Pay = {
@@ -77,10 +78,12 @@ async function attachPays(officeId: string, cs: Case[], caseId?: string) {
   const supabase = await createClient();
   let q = supabase.from("case_payments").select("*").eq("office_id", officeId);
   if (caseId) q = q.eq("case_id", caseId);
-  const { data, error } = await q.order("paid_on");
-  if (error) return cs;
-  const rows = (data ?? []) as Pay[];
-  return cs.map((c) => ({ ...c, pays: rows.filter((p) => p.case_id === c.id) }));
+  let sq = supabase.from("cases").select("id").eq("office_id", officeId).eq("is_sample", true);
+  if (caseId) sq = sq.eq("id", caseId);
+  const [{ data, error }, sm] = await Promise.all([q.order("paid_on"), sq]);
+  const samples = new Set((sm.error ? [] : sm.data ?? []).map((x) => x.id as string));
+  const rows = error ? null : ((data ?? []) as Pay[]);
+  return cs.map((c) => ({ ...c, ...(rows ? { pays: rows.filter((p) => p.case_id === c.id) } : {}), ...(samples.has(c.id) ? { is_sample: true } : {}) }));
 }
 export type Member = { user_id: string; display_name: string; short_name: string | null; role: string; is_active: boolean };
 

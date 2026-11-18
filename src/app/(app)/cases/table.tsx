@@ -16,6 +16,7 @@ export type Row = {
   team: string;
   delivered: boolean;
   reportDate: string;
+  sample?: boolean;
   hearing: { date: string; days: number; past: boolean } | null;
   search: string;
   x: (string | number)[];
@@ -132,6 +133,7 @@ export default function CasesTable({ rows, xHeader, xColor }: { rows: Row[]; xHe
                   ) : (
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">بدون رقم بعد</span>
                   )}
+                  {r.sample && <span className="mr-2 inline-block rounded-full bg-violet-100 px-2 py-0.5 text-[11px] text-violet-800">نموذجية</span>}
                   {r.srcLabel && <span className={`mr-2 inline-block rounded-full px-2 py-0.5 text-[11px] ${SRC_TONE[r.src] ?? ""}`}>{r.srcLabel}</span>}
                 </td>
                 <td className="px-3 py-3 leading-6">

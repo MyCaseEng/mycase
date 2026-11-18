@@ -1,5 +1,5 @@
 // Shared by the office help window (client) and the platform dashboard (server).
-export const KIND_LABEL: Record<string, string> = { problem: "مشكلة", suggestion: "اقتراح", question: "استفسار" };
+export const KIND_LABEL: Record<string, string> = { problem: "مشكلة", suggestion: "اقتراح", question: "استفسار", subscription: "طلب اشتراك" };
 const PAGES: [RegExp, string][] = [
   [/^\/$/, "الصفحة الرئيسية"],
   [/^\/cases\/new/, "دعوى جديدة"],
