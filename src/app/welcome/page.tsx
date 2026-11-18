@@ -1,38 +1,11 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { createSampleCase } from "@/lib/sample";
 import { createClient } from "@/lib/supabase/server";
 import { BRAND } from "@/lib/brand";
-import SubmitButton from "@/components/submit-button";
-import { COUNTRIES, DEFAULT_COUNTRY, validCountry } from "@/lib/countries";
-import { TERMS_VERSION } from "@/lib/terms";
+import { OfficeForm, AutoSetup } from "./form";
 import { isStaffEmail } from "@/lib/staff";
-import { SPECIALTIES, DEFAULT_SPECIALTY, validSpecialty } from "@/lib/specialties";
 
-// First sign-in with no office: create one (you become its admin) or wait for an invitation.
-async function createOffice(formData: FormData) {
-  "use server";
-  const name = String(formData.get("name") || "").trim();
-  const display = String(formData.get("display") || "").trim();
-  if (!name || !display || formData.get("agree") !== "on") return;
-  const supabase = await createClient();
-  // one office per new account: if this person already belongs to an office (e.g. the form was sent twice), go to it
-  const { data: cl } = await supabase.auth.getClaims();
-  if (isStaffEmail(cl?.claims?.email as string | undefined)) redirect("/suspended");
-  const { data: already } = await supabase.from("members").select("office_id").eq("user_id", cl?.claims?.sub ?? "").limit(1);
-  if (already?.length) redirect("/");
-  const { data: officeId, error } = await supabase.rpc("create_office", { p_name: name, p_display_name: display });
-  if (error) throw new Error(error.message);
-  await supabase.rpc("accept_terms", { p_version: TERMS_VERSION });
-  await supabase.from("offices").update({
-      country: validCountry(formData.get("country")),
-      specialty: validSpecialty(formData.get("specialty")),
-      expert_reg: String(formData.get("expert_reg") || "").trim().slice(0, 40) || null,
-    }).eq("id", officeId);
-  await createSampleCase(supabase, officeId as string, cl?.claims?.sub as string);
-  redirect("/");
-}
-
+// First sign-in with no office: the office is created from the sign-up details, or from the form here.
 async function signOut() {
   "use server";
   const supabase = await createClient();
@@ -59,6 +32,12 @@ async function Welcome() {
   // the platform owner never has to create an office
   const { data: owner } = await supabase.rpc("is_platform_admin");
   if (owner) redirect("/platform");
+  // a member already (e.g. the office was just created): go in
+  const { data: mine } = await supabase.from("members").select("office_id").eq("user_id", u.user.id).limit(1);
+  if (mine?.length) redirect("/");
+  // details given in the one-step sign-up
+  const o = (u.user.user_metadata as { office?: Record<string, unknown> } | undefined)?.office;
+  const pending = o ? Object.fromEntries(Object.entries(o).map(([k, v]) => [k, String(v ?? "")])) : null;
 
   return (
     <main className="flex flex-1 items-center justify-center p-6">
@@ -69,73 +48,14 @@ async function Welcome() {
             {u.user.email}
           </p>
         </div>
-        <div className="rounded-xl bg-background p-4 text-sm leading-7">
-          <b>هل دعاك مكتبك؟</b> اطلب من مدير المكتب أن يضيف بريدك أعلاه في صفحة الفريق، ثم أعد فتح المنصة.
-        </div>
-        <form action={createOffice} className="space-y-3">
-          <b className="text-sm">أو أنشئ مكتباً جديداً وتصبح مديره:</b>
-          <input
-            name="name"
-            required
-            placeholder="اسم المكتب"
-            className="w-full rounded-lg border border-line px-3 py-2 outline-none focus:border-brand"
-          />
-          <label className="block text-sm text-muted">
-            دولة المكتب
-            <select
-              name="country"
-              defaultValue={DEFAULT_COUNTRY}
-              className="mt-1 w-full rounded-lg border border-line bg-white text-foreground px-3 py-2 outline-none focus:border-brand"
-            >
-              {COUNTRIES.map(([c, n]) => (
-                <option key={c} value={c}>{n}</option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm text-muted">
-            نوع وتخصص الخبرة
-            <select
-              name="specialty"
-              defaultValue={DEFAULT_SPECIALTY}
-              className="mt-1 w-full rounded-lg border border-line bg-white text-foreground px-3 py-2 outline-none focus:border-brand"
-            >
-              {SPECIALTIES.map((sp) => (
-                <option key={sp.code} value={sp.code}>{sp.name}</option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm text-muted">
-            رقم قيد الخبير
-            <input
-              name="expert_reg"
-              dir="ltr"
-              maxLength={40}
-              placeholder="كما في شهادة القيد لدى الجهة المختصة"
-              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-right text-foreground outline-none focus:border-brand"
-            />
-            <span className="mt-1 block text-xs">يُطبع في ترويسة النماذج، ويدخل في الرقم المرجعي لمستنداتك. يمكن تعديله لاحقاً من الإعدادات.</span>
-          </label>
-          <input
-            name="display"
-            required
-            placeholder="اسمك كما يظهر للفريق"
-            className="w-full rounded-lg border border-line px-3 py-2 outline-none focus:border-brand"
-          />
-          <label className="flex items-start gap-2 rounded-lg bg-background p-3 text-sm">
-            <input type="checkbox" name="agree" required className="mt-1 size-4 accent-[var(--brand)]" />
-            <span>
-              قرأتُ{" "}
-              <a href="/terms" target="_blank" className="font-semibold text-brand underline underline-offset-4">
-                شروط الاستخدام
-              </a>{" "}
-              وأوافق عليها، وأقرّ بأنني الخبير صاحب المكتب أو مفوَّض عنه.
-            </span>
-          </label>
-          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">سنضيف إلى مكتبك دعوى نموذجية ببيانات تجريبية لتتعرّف على المنصة، ويمكنك حذفها متى شئت.</p>
-          <SubmitButton pendingText="جارٍ إنشاء المكتب…" className="w-full rounded-lg bg-ink py-2.5 font-semibold text-white hover:bg-ink-hover">
-            إنشاء المكتب
-          </SubmitButton>
-        </form>
+        {pending ? (
+          <AutoSetup v={pending} />
+        ) : (
+          <>
+            <p className="text-sm text-muted">أكمل بيانات مكتبك لتبدأ، وتصبح مدير المكتب.</p>
+            <OfficeForm />
+          </>
+        )}
         <form action={signOut}>
           <button className="text-xs text-muted hover:text-red-700">تسجيل الخروج</button>
         </form>
